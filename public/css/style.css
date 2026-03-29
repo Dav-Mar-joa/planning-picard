@@ -330,6 +330,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   padding: 1.5rem 1.5rem 1.25rem;
   position: relative;
   overflow: hidden;
+  margin-top:1rem;
 }
 .page-hero::before {
   content: '';
@@ -359,7 +360,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 .page-subtitle {
   font-size: 0.8rem;
   color: var(--text3);
-  margin-top: 0.25rem;
+  margin-top: 0.65rem;
 }
 
 /* ══════════════════════════════════════════

@@ -29,7 +29,7 @@ block content
               | Gestion du planning
               if semaineChoisie === semaineCourante
                 |  · 
-                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle; margin-left:0.5rem;") ● Semaine actuelle
+                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle; margin-left:1rem;") ● Semaine actuelle
             else
               | Gestion des collaborateurs
 
@@ -121,7 +121,7 @@ block content
                       .form-group(style="margin-bottom:0;min-width:130px;flex:1;")
                         label.form-label Matricule
                         input.form-input(type="text" name=`employes[${i}][id]` value=emp.id placeholder="Matricule" readonly style="opacity:0.6;cursor:not-allowed;")
-                    button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
+                    //- button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
                   .employe-card-body
                     .jours-grid
                       each jour in jours

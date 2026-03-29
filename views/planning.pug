@@ -82,10 +82,10 @@ block content
               | Semaine #{semaineChoisie.split('/')[0]} · #{planning && planning.du ? planning.du + ' → ' + planning.au : ''}
               if semaineChoisie === semaineCourante
                 |  
-                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem; margin-left:0.5rem;") ● Semaine actuelle
+                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem; margin-left:1rem;") ● Semaine actuelle
               else
                 |  
-                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem; margin-left:0.5rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
+                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem; margin-left:1rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
             else
               | Aucune semaine disponible
 
@@ -140,7 +140,7 @@ block content
                 - const hInfoM = heuresParEmp[hKeyM]
                 tr
                   td
-                    span.emp-first #{emp.nom.split(' ')[0]}
+                    span.emp-first #{emp.nom.split(' ')[1]}
                     span.emp-hrs #{hInfoM ? hInfoM.fmt : ''}
                   each jour in jours
                     - const travailleM = emp.planning[jour] && emp.planning[jour].length > 0
