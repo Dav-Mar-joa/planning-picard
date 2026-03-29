@@ -27,10 +27,10 @@ block content
               | Semaine #{semaineChoisie.split('/')[0]} · #{planning && planning.du ? planning.du + ' → ' + planning.au : ''}
               if semaineChoisie === semaineCourante
                 |  
-                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem;") ● Semaine actuelle
+                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem; margin-left:0.4rem;") ● Semaine actuelle
               else
                 |  
-                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
+                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem; margin-left:0.4rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
             else
               | Aucune semaine disponible
 
@@ -59,10 +59,12 @@ block content
                   td.emp-name-cell
                     .emp-name #{emp.nom}
                     .emp-id #{emp.id}
+                    .emp-id #{emp.heuresHebdo}
                   td(style="min-width:110px;")
                     if hInfo
                       .hours-counter
                         .hours-text(class="under") #{hInfo.fmt}
+                  
                   each jour in jours
                     td.jour-cell(class=jour===jourAujourdHui ? 'col-today' : '')
                       .creneau-stack
