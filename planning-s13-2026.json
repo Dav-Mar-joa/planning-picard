@@ -7,7 +7,12 @@
       "nom": "MARTINS David",
       "id": "00050611",
       "planning": {
-        "lun": [],
+        "lun": [
+          {
+            "debut": "14:00",
+            "fin": "19:00"
+          }
+        ],
         "mar": [],
         "mer": [],
         "jeu": [],
