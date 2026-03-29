@@ -629,7 +629,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 .emp-day-meta { font-size: 0.68rem; color: var(--text3); margin-top: 2px; }
 .emp-day-hours { font-size: 0.72rem; color: var(--text2); margin-top: 3px; }
 
-.emp-day-creneaux { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+.emp-day-creneaux { display: flex; flex-direction: row; gap: 4px; align-items: flex-end; flex-shrink: 0; }
 
 /* Checkbox show-all */
 .toggle-all-wrap {
