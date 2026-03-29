@@ -54,7 +54,7 @@
 /* ── RESET ── */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-html { scroll-padding-top: 60px; }
+html { scroll-padding-top: calc(60px + env(safe-area-inset-top, 0px)); }
 body {
   background: var(--bg);
   color: var(--text);
@@ -75,7 +75,11 @@ body {
    LAYOUT
 ══════════════════════════════════════════ */
 .app-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
-.main-content { flex: 1; }
+/* .main-content { flex: 1; } */
+.main-content {
+  padding-top: 0; /* déjà 0, on le garde explicite */
+  scroll-margin-top: 60px;
+}
 
 /* ══════════════════════════════════════════
    HEADER / NAV
@@ -1034,6 +1038,17 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 /* ══════════════════════════════════════════
    PWA
 ══════════════════════════════════════════ */
-@media (display-mode: standalone) {
+/* @media (display-mode: standalone) {
   .app-header { padding-top: env(safe-area-inset-top); }
+  html { scroll-padding-top: calc(60px + env(safe-area-inset-top, 0px)); }
+} */
+
+@media (display-mode: standalone) {
+  .app-header {
+    padding-top: env(safe-area-inset-top);
+    height: calc(60px + env(safe-area-inset-top));  /* ← ajouter cette ligne */
+  }
+  html {
+    scroll-padding-top: calc(60px + env(safe-area-inset-top, 0px));  /* ← et celle-ci */
+  }
 }
