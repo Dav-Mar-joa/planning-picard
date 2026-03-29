@@ -3,6 +3,61 @@ extends layout
 block head
   style.
     .mobile-only { display: none; }
+    @media (max-width: 768px) {
+      .desktop-only { display: none !important; }
+      .mobile-only { display: block !important; }
+    }
+    /* Tableau résumé mobile — responsive sans scroll */
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .summary-table th,
+    .summary-table td {
+      padding: 0.45rem 0.2rem;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .summary-table th:first-child,
+    .summary-table td:first-child {
+      text-align: left;
+      padding-left: 0.75rem;
+      width: 22%;
+    }
+    .summary-table th {
+      font-size: 0.58rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text3);
+      background: var(--surface2);
+      border-bottom: 2px solid var(--border);
+    }
+    .summary-table th.col-today { color: var(--accent); border-bottom-color: var(--accent); }
+    .summary-cell-work {
+      display: block;
+      width: 100%;
+      padding: 0.28rem 0;
+      background: linear-gradient(135deg, rgba(232,160,32,0.2), rgba(232,160,32,0.07));
+      border: 1px solid rgba(232,160,32,0.35);
+      border-radius: 3px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .summary-cell-off {
+      display: block;
+      width: 100%;
+      padding: 0.28rem 0;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      font-size: 0.56rem;
+      color: var(--text3);
+    }
+    .emp-first { font-weight: 700; font-size: 0.75rem; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .emp-hrs   { font-size: 0.58rem; color: var(--text3); display: block; }
 
 block headerRight
   if semaines && semaines.length > 0
@@ -27,10 +82,10 @@ block content
               | Semaine #{semaineChoisie.split('/')[0]} · #{planning && planning.du ? planning.du + ' → ' + planning.au : ''}
               if semaineChoisie === semaineCourante
                 |  
-                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem;") ● Semaine actuelle
+                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem; margin-left:0.5rem;") ● Semaine actuelle
               else
                 |  
-                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
+                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem; margin-left:0.5rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
             else
               | Aucune semaine disponible
 
@@ -41,58 +96,66 @@ block content
         .no-data-text Le manager n'a pas encore publié de planning.
 
     else
-      //- ══ RÉSUMÉ VISUEL ══
-      .desktop-only
-        .planning-table-wrap(style="padding-bottom:0;")
-          .section-title(style="margin-bottom:0.75rem;") Vue d'ensemble
-          table.planning-table(style="min-width:0;")
-            thead
-              tr
-                th(style="min-width:120px;") Jour
-                each emp in planning.employes
-                  th(style="text-align:center;min-width:90px;white-space:nowrap;") #{emp.nom.split(' ')[0]}
-            tbody
-              each jour in jours
-                tr
-                  td(style="padding:0.5rem 1.25rem;font-weight:600;font-size:0.8rem;color:var(--text2);")
-                    span(class=jour===jourAujourdHui?'text-accent':'') #{labels[jour]}
-                  each emp in planning.employes
-                    - const travaille = emp.planning[jour] && emp.planning[jour].length > 0
-                    td(style="text-align:center;padding:0.4rem 0.5rem;")
-                      if travaille
-                        span(style="display:inline-block;background:linear-gradient(135deg,rgba(232,160,32,0.25),rgba(232,160,32,0.1));border:1px solid rgba(232,160,32,0.35);border-radius:4px;padding:0.25rem 0.5rem;font-size:0.68rem;font-weight:700;color:var(--accent);letter-spacing:0.03em;") ✓
-                      else
-                        span(style="display:inline-block;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:0.25rem 0.5rem;font-size:0.65rem;color:var(--text3);letter-spacing:0.04em;") REPOS
 
+      //- ══ RÉSUMÉ VISUEL — DESKTOP UNIQUEMENT ══
+      .desktop-only
+        .mobile-summary
+          .planning-table-wrap(style="padding-bottom:0;")
+            .section-title(style="margin-bottom:0.75rem;") Vue d'ensemble
+            table.planning-table(style="min-width:0;")
+              thead
+                tr
+                  th(style="min-width:120px;") Jour
+                  each emp in planning.employes
+                    th(style="text-align:center;min-width:90px;white-space:nowrap;") #{emp.nom.split(' ')[0]}
+              tbody
+                each jour in jours
+                  tr
+                    td(style="padding:0.5rem 1.25rem;font-weight:600;font-size:0.8rem;color:var(--text2);")
+                      span(class=jour===jourAujourdHui?'text-accent':'') #{labels[jour]}
+                    each emp in planning.employes
+                      - const travailleD = emp.planning[jour] && emp.planning[jour].length > 0
+                      td(style="text-align:center;padding:0.4rem 0.5rem;")
+                        if travailleD
+                          span(style="display:inline-block;background:linear-gradient(135deg,rgba(232,160,32,0.25),rgba(232,160,32,0.1));border:1px solid rgba(232,160,32,0.35);border-radius:4px;padding:0.25rem 0.5rem;font-size:0.68rem;font-weight:700;color:var(--accent);") ✓
+                        else
+                          span(style="display:inline-block;background:var(--surface3);border:1px solid var(--border);border-radius:4px;padding:0.25rem 0.5rem;font-size:0.65rem;color:var(--text3);") REPOS
+
+      //- Séparateur desktop
+      .desktop-only
+        div(style="height:1px;background:var(--border);margin:0 1.5rem;")
+
+      //- ══ TABLEAU RÉSUMÉ — MOBILE UNIQUEMENT ══
       .mobile-only
-        div(style="overflow-x:auto;padding:1rem;")
-          table(style="border-collapse:collapse;width:100%;")
+        div(style="padding:1rem 0.75rem 0;")
+          table.summary-table
             thead
               tr
-                th(style="padding:0.5rem 0.6rem;font-size:0.62rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--text3);border-bottom:2px solid var(--border);text-align:left;background:var(--surface2);white-space:nowrap;min-width:90px;") Équipier
+                th Équipier
                 each jour in jours
-                  th(style=`padding:0.5rem 0.4rem;font-size:0.62rem;text-align:center;color:${jour===jourAujourdHui?'var(--accent)':'var(--text3)'};border-bottom:2px solid ${jour===jourAujourdHui?'var(--accent)':'var(--border)'};background:var(--surface2);white-space:nowrap;`) #{labels[jour].substring(0,3)}
+                  th(class=jour===jourAujourdHui?'col-today':'') #{labels[jour].substring(0,3)}
             tbody
               each emp in planning.employes
-                - const hKey2 = emp.id || emp.nom
-                - const hInfo2 = heuresParEmp[hKey2]
-                tr(style="border-bottom:1px solid var(--border);")
-                  td(style="padding:0.6rem 0.6rem;white-space:nowrap;")
-                    div(style="font-weight:700;font-size:0.78rem;color:var(--text);") #{emp.nom.split(' ')[0]}
-                    div(style="font-size:0.62rem;color:var(--text3);margin-top:1px;") #{hInfo2 ? hInfo2.fmt : ''}
+                - const hKeyM = emp.id || emp.nom
+                - const hInfoM = heuresParEmp[hKeyM]
+                tr
+                  td
+                    span.emp-first #{emp.nom.split(' ')[0]}
+                    span.emp-hrs #{hInfoM ? hInfoM.fmt : ''}
                   each jour in jours
-                    - const travaille = emp.planning[jour] && emp.planning[jour].length > 0
-                    td(style="padding:0.4rem 0.3rem;text-align:center;")
-                      if travaille
-                        span(style="display:inline-block;width:100%;min-width:36px;padding:0.3rem 0.2rem;background:linear-gradient(135deg,rgba(232,160,32,0.22),rgba(232,160,32,0.08));border:1px solid rgba(232,160,32,0.4);border-radius:4px;font-size:0.6rem;font-weight:700;color:var(--accent);text-align:center;") ✓
+                    - const travailleM = emp.planning[jour] && emp.planning[jour].length > 0
+                    td
+                      if travailleM
+                        span.summary-cell-work ✓
                       else
-                        span(style="display:inline-block;width:100%;min-width:36px;padding:0.3rem 0.2rem;background:var(--surface3);border:1px solid var(--border);border-radius:4px;font-size:0.58rem;color:var(--text3);text-align:center;") —
+                        span.summary-cell-off —
 
       //- Séparateur
-      div(style="height:1px;background:var(--border);margin:0 1.5rem;")
-
-      //- ══ DESKTOP DÉTAIL ══
-      .desktop-only        .planning-table-wrap
+      div(style="height:1px;background:var(--border);margin:1rem 0.75rem 0;")
+        
+      //- ══ TABLEAU DÉTAIL — DESKTOP ══
+      .desktop-only
+        .planning-table-wrap
           table.planning-table
             thead
               tr
@@ -121,13 +184,8 @@ block content
                         else
                           span.creneau-pill.creneau-repo REPOS
 
-      //- ══ MOBILE ══
+      //- ══ DÉTAIL PAR JOUR — MOBILE ══
       .mobile-only
-        //- Checkbox afficher tous
-        label.toggle-all-wrap
-          input#toggle-all(type="checkbox" onchange="toggleAll(this.checked)")
-          span Voir tous les collègues
-
         .day-tabs
           each jour in jours
             button.day-tab(data-jour=jour onclick=`switchDay('${jour}')`)
@@ -159,16 +217,14 @@ block scripts
     const AUJOURD_HUI = '#{jourAujourdHui}';
     const JOURS = ['lun','mar','mer','jeu','ven','sam','dim'];
 
-    // Responsive switch
-    function checkMobile() {
-      const isMobile = window.innerWidth <= 768;
-      document.querySelectorAll('.desktop-only').forEach(el => el.style.display = isMobile ? 'none' : '');
-      document.querySelectorAll('.mobile-only').forEach(el => el.style.display = isMobile ? 'block' : 'none');
-    }
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
+    //- function checkMobile() {
+    //-   const isMobile = window.innerWidth <= 768;
+    //-   document.querySelectorAll('.desktop-only').forEach(el => el.style.display = isMobile ? 'none' : '');
+    //-   document.querySelectorAll('.mobile-only').forEach(el => el.style.display = isMobile ? 'block' : 'none');
+    //- }
+    //- checkMobile();
+    //- window.addEventListener('resize', checkMobile);
 
-    // Day tabs
     function switchDay(jour) {
       document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
@@ -179,7 +235,4 @@ block scripts
     }
     switchDay(JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun');
 
-    // Toggle tous les collègues (par défaut, on voit tout le monde)
-    function toggleAll(showAll) {
-      // Pour l'instant tout le monde est visible — future évolution : filtrer par nom
-    }
+    function toggleAll(showAll) {}

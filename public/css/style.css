@@ -979,6 +979,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 }
 .add-btn-dashed:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 
+
 /* ══════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════ */
@@ -997,8 +998,16 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   .admin-tabs { padding: 0 1rem; }
   .modal { border-radius: var(--r-lg); }
 }
-@media (min-width: 769px) {
+/* @media (min-width: 769px) {
   .mobile-only { display: none !important; }
+} */
+ @media (min-width: 769px) {
+  .mobile-only {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
 }
 @media (max-width: 600px) {
   .jours-grid { grid-template-columns: repeat(2, 1fr); }
@@ -1007,6 +1016,18 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 }
 @media (max-width: 400px) {
   .logo-text { display: none; }
+}
+
+@media (max-width: 468px) {
+  .desktop-only {
+    display: none;
+  }
+}
+
+.mobile-summary { display: none; }
+
+@media (max-width: 768px) {
+  .mobile-summary { display: block; }
 }
 
 /* ══════════════════════════════════════════
