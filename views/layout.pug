@@ -8,6 +8,7 @@ html(lang="fr")
     link(rel="apple-touch-icon" href="/icons/icon-192.png")
     title #{pageTitle || 'Planning Picard'}
     link(rel="stylesheet" href="/css/style.css")
+    script. history.scrollRestoration = 'manual';
     block head
   body
     .app-wrapper
@@ -22,17 +23,20 @@ html(lang="fr")
       footer.app-footer
         .footer-note Picard · 0412-Voltaire · 0040-Paris Sud Est
         block footerRight
+    //- script.
+    //-   // Fix scroll au refresh — méthode moderne (performance.navigation déprécié sur Safari)
+    //-   try {
+    //-     const nav = performance.getEntriesByType('navigation')[0];
+    //-     if (nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
+    //-       window.scrollTo({ top: 0, behavior: 'instant' });
+    //-     }
+    //-   } catch(e) {
+    //-     // fallback si API non supportée
+    //-     window.scrollTo(0, 0);
+    //-   }  
     script.
-      // Fix scroll au refresh — méthode moderne (performance.navigation déprécié sur Safari)
-      try {
-        const nav = performance.getEntriesByType('navigation')[0];
-        if (nav && (nav.type === 'reload' || nav.type === 'back_forward')) {
-          window.scrollTo({ top: 0, behavior: 'instant' });
-        }
-      } catch(e) {
-        // fallback si API non supportée
-        window.scrollTo(0, 0);
-      }   
+      // Scroll top immédiat avant rendu — plus fiable que performance.navigation
+      history.scrollRestoration = 'manual'; 
     script.
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js');
