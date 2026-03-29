@@ -78,7 +78,8 @@ body {
 /* .main-content { flex: 1; } */
 .main-content {
   padding-top: 0; /* déjà 0, on le garde explicite */
-  scroll-margin-top: 60px;
+
+  scroll-margin-top: 10px;
 }
 
 /* ══════════════════════════════════════════
@@ -335,6 +336,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   position: relative;
   overflow: hidden;
   margin-top:1rem;
+  margin-top: calc(1.5rem);
 }
 .page-hero::before {
   content: '';
@@ -995,7 +997,10 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   .desktop-only { display: none !important; }
   .mobile-only { display: block !important; }
   .header-inner { padding: 0 1rem; height: 54px; }
-  .page-hero { padding: 1.1rem 1rem; }
+  .page-hero { 
+    padding: 1.1rem 1rem;
+    padding-top: calc(1.1rem + 54px);
+ }
   .week-nav-bar { padding: 0 1rem; }
   .planning-table-wrap { padding: 1rem; }
   .p-container { padding: 1rem; }

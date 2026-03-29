@@ -8,8 +8,11 @@ html(lang="fr")
     link(rel="apple-touch-icon" href="/icons/icon-192.png")
     title #{pageTitle || 'Planning Picard'}
     link(rel="stylesheet" href="/css/style.css")
-    script. 
+    script.
       history.scrollRestoration = 'manual';
+      window.addEventListener('pageshow', function(e) {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      });
     block head
   body
     .app-wrapper
