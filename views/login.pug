@@ -1,0 +1,24 @@
+doctype html
+html(lang="fr")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport" content="width=device-width, initial-scale=1.0")
+    meta(name="theme-color" content="#0f1215")
+    title Connexion — Picard Planning
+    link(rel="stylesheet" href="/css/style.css")
+  body
+    .login-page
+      .login-box
+        .login-header
+          .login-logo-icon P
+          .login-title Picard Planning
+          .login-subtitle Accès réservé au manager
+        .login-body
+          if error
+            .alert.alert-danger(style="margin-bottom:1rem;") #{error}
+          form(method="POST" action="/admin/login")
+            .form-group
+              label.form-label Mot de passe
+              input.form-input(type="password" name="pwd" autofocus required placeholder="••••••••")
+            button.btn.btn-primary(type="submit" style="width:100%;margin-top:0.5rem;padding:0.65rem;font-size:0.9rem;") Accéder
+          a(href="/" style="display:block;text-align:center;margin-top:1.25rem;font-size:0.72rem;color:var(--text3);text-decoration:none;") ← Retour au planning

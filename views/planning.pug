@@ -1,0 +1,136 @@
+extends layout
+
+block head
+  style.
+    .mobile-only { display: none; }
+
+block headerRight
+  if semaines && semaines.length > 0
+    select#week-select.form-select(style="width:auto;font-size:0.82rem;padding:0.35rem 2rem 0.35rem 0.65rem;" onchange="window.location='/?s='+encodeURIComponent(this.value)")
+      each s in semaines
+        option(value=s selected=s===semaineChoisie)
+          | S#{s.split('/')[0]} · #{s.split('/')[1]}
+          if s === semaineCourante
+            |  ★
+  a.btn.btn-ghost.btn-sm(href="/admin/login") Admin
+
+block content
+  .main-content
+
+    //- HERO
+    .page-hero
+      .page-hero-inner
+        div
+          .page-title Planning des Présences
+          .page-subtitle
+            if semaineChoisie
+              | Semaine #{semaineChoisie.split('/')[0]} · #{planning && planning.du ? planning.du + ' → ' + planning.au : ''}
+              if semaineChoisie === semaineCourante
+                |  
+                span.badge.badge-green(style="vertical-align:middle;font-size:0.65rem;") ● Semaine actuelle
+              else
+                |  
+                span.badge.badge-ghost(style="vertical-align:middle;font-size:0.65rem;") Sem. actuelle : S#{semaineCourante.split('/')[0]}
+            else
+              | Aucune semaine disponible
+
+    if !planning || !planning.employes || planning.employes.length === 0
+      .no-data
+        .no-data-icon 📋
+        .no-data-title Aucun planning
+        .no-data-text Le manager n'a pas encore publié de planning.
+
+    else
+      //- ══ DESKTOP ══
+      .desktop-only
+        .planning-table-wrap
+          table.planning-table
+            thead
+              tr
+                th Équipier
+                th Heures
+                each jour in jours
+                  th(class=jour===jourAujourdHui ? 'col-today' : '') #{labels[jour]}
+            tbody
+              each emp in planning.employes
+                - const hKey = emp.id || emp.nom
+                - const hInfo = heuresParEmp[hKey]
+                tr
+                  td.emp-name-cell
+                    .emp-name #{emp.nom}
+                    .emp-id #{emp.id}
+                  td(style="min-width:110px;")
+                    if hInfo
+                      .hours-counter
+                        .hours-text(class="under") #{hInfo.fmt}
+                  each jour in jours
+                    td.jour-cell(class=jour===jourAujourdHui ? 'col-today' : '')
+                      .creneau-stack
+                        if emp.planning[jour] && emp.planning[jour].length > 0
+                          each creneau, ci in emp.planning[jour]
+                            span(class=`creneau-pill ${ci===0?'creneau-matin':'creneau-apmidi'}`) #{creneau.debut}–#{creneau.fin}
+                        else
+                          span.creneau-pill.creneau-repo REPOS
+
+      //- ══ MOBILE ══
+      .mobile-only
+        //- Checkbox afficher tous
+        label.toggle-all-wrap
+          input#toggle-all(type="checkbox" onchange="toggleAll(this.checked)")
+          span Voir tous les collègues
+
+        .day-tabs
+          each jour in jours
+            button.day-tab(data-jour=jour onclick=`switchDay('${jour}')`)
+              | #{labels[jour].substring(0,3)}
+
+        each jour in jours
+          .day-panel(id=`panel-${jour}`)
+            each emp in planning.employes
+              - const hKey2 = emp.id || emp.nom
+              - const hInfo2 = heuresParEmp[hKey2]
+              .emp-day-card(data-collab="true")
+                .emp-day-info
+                  .emp-day-name #{emp.nom}
+                  .emp-day-meta #{emp.id}
+                  if hInfo2
+                    .emp-day-hours #{hInfo2.fmt} / semaine
+                .emp-day-creneaux
+                  if emp.planning[jour] && emp.planning[jour].length > 0
+                    each creneau, ci in emp.planning[jour]
+                      span(class=`creneau-pill ${ci===0?'creneau-matin':'creneau-apmidi'}`) #{creneau.debut}–#{creneau.fin}
+                  else
+                    span.creneau-pill.creneau-repo REPOS
+
+block footerRight
+  .footer-note(style="font-size:0.65rem;color:var(--text3);") Données GitHub
+
+block scripts
+  script.
+    const AUJOURD_HUI = '#{jourAujourdHui}';
+    const JOURS = ['lun','mar','mer','jeu','ven','sam','dim'];
+
+    // Responsive switch
+    function checkMobile() {
+      const isMobile = window.innerWidth <= 768;
+      document.querySelectorAll('.desktop-only').forEach(el => el.style.display = isMobile ? 'none' : '');
+      document.querySelectorAll('.mobile-only').forEach(el => el.style.display = isMobile ? 'block' : 'none');
+    }
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    // Day tabs
+    function switchDay(jour) {
+      document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
+      const tab = document.querySelector(`.day-tab[data-jour="${jour}"]`);
+      if (tab) { tab.classList.add('active'); tab.scrollIntoView({ inline: 'center', behavior: 'smooth' }); }
+      const panel = document.getElementById(`panel-${jour}`);
+      if (panel) panel.classList.add('active');
+    }
+    switchDay(JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun');
+
+    // Toggle tous les collègues (par défaut, on voit tout le monde)
+    function toggleAll(showAll) {
+      // Pour l'instant tout le monde est visible — future évolution : filtrer par nom
+    }
