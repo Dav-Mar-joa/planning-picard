@@ -208,7 +208,7 @@ block content
                     form(method="POST" action=`/admin/collaborateurs/delete?pwd=${pwd}` style="display:inline;" onsubmit="return confirm('Supprimer ?')")
                       input(type="hidden" name="pwd" value=pwd)
                       input(type="hidden" name="index" value=idx)
-                      button.btn.btn-danger.btn-sm(type="submit") ✕
+                      //- button.btn.btn-danger.btn-sm(type="submit") ✕
                 .collab-meta
                   span.badge(class=collab.contrat==='CDI'?'badge-green':'badge-blue') #{collab.contrat}
                   span.badge.badge-accent #{collab.heuresHebdo}h/sem
