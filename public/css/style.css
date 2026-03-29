@@ -993,7 +993,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
 @media (max-width: 1024px) {
   .jours-grid { grid-template-columns: repeat(4, 1fr); }
 }
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .desktop-only { display: none !important; }
   .mobile-only { display: block !important; }
   .header-inner { padding: 0 1rem; height: 54px; }
@@ -1007,7 +1007,22 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.4); cur
   .collab-grid { padding: 1rem; grid-template-columns: 1fr; }
   .admin-tabs { padding: 0 1rem; }
   .modal { border-radius: var(--r-lg); }
-}
+} */
+@media (max-width: 768px) {
+  .desktop-only { display: none !important; }
+  .mobile-only { display: block !important; }
+  .header-inner { padding: 0 1rem; height: 54px; }
+  .page-hero { 
+    padding: 1.1rem 1rem;
+    /* Supprimer le padding-top avec 54px — c'était ça le bug */
+  }
+  .week-nav-bar { padding: 0 1rem; }
+  .planning-table-wrap { padding: 1rem; }
+  .p-container { padding: 1rem; }
+  .collab-grid { padding: 1rem; grid-template-columns: 1fr; }
+  .admin-tabs { padding: 0 1rem; }
+  .modal { border-radius: var(--r-lg); }
+} 
 /* @media (min-width: 769px) {
   .mobile-only { display: none !important; }
 } */
