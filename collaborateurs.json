@@ -46,5 +46,13 @@
     "dateNaissance": "13/09/1986",
     "heuresHebdo": 30,
     "contrat": "CDI"
+  },
+  {
+    "matricule": "Bv",
+    "nom": "CV",
+    "prenom": "Mk",
+    "dateNaissance": "13/09/1986",
+    "heuresHebdo": 10,
+    "contrat": "CDI"
   }
 ]
