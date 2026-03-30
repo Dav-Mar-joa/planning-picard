@@ -174,7 +174,8 @@ block content
                   td(style="min-width:110px;")
                     if hInfo
                       .hours-counter
-                        .hours-text(class="under") #{hInfo.fmt}
+                        if hInfo
+                          .emp-day-hours #{hInfo.fmt} &nbsp;(#{emp.heuresHebdo}h)
                   each jour in jours
                     td.jour-cell(class=jour===jourAujourdHui ? 'col-today' : '')
                       .creneau-stack
@@ -199,9 +200,8 @@ block content
               .emp-day-card(data-collab="true")
                 .emp-day-info
                   .emp-day-name #{emp.nom}
-                  //- .emp-day-meta #{emp.id}
-                  if hInfo2
-                    .emp-day-hours #{hInfo2.fmt} / semaine (#{emp.heuresHebdo}h)
+                    if hInfo2
+                      .emp-day-hours #{hInfo2.fmt} &nbsp; (#{emp.heuresHebdo}h)
                 .emp-day-creneaux
                   if emp.planning[jour] && emp.planning[jour].length > 0
                     each creneau, ci in emp.planning[jour]
