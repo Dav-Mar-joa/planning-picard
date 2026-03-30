@@ -141,7 +141,7 @@ block content
                 tr
                   td
                     span.emp-first #{emp.nom.split(' ')[1]}
-                    span.emp-hrs #{hInfoM ? hInfoM.fmt : ''}
+                    //- span.emp-hrs #{hInfoM ? hInfoM.fmt : ''}/#{emp.heuresHebdo}h
                   each jour in jours
                     - const travailleM = emp.planning[jour] && emp.planning[jour].length > 0
                     td
@@ -201,7 +201,7 @@ block content
                   .emp-day-name #{emp.nom}
                   //- .emp-day-meta #{emp.id}
                   if hInfo2
-                    .emp-day-hours #{hInfo2.fmt} / semaine
+                    .emp-day-hours #{hInfo2.fmt} / semaine (#{emp.heuresHebdo}h)
                 .emp-day-creneaux
                   if emp.planning[jour] && emp.planning[jour].length > 0
                     each creneau, ci in emp.planning[jour]
