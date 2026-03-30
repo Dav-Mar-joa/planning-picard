@@ -229,7 +229,7 @@ block scripts
       document.querySelectorAll('.day-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.day-panel').forEach(p => p.classList.remove('active'));
       const tab = document.querySelector(`.day-tab[data-jour="${jour}"]`);
-      if (tab) { tab.classList.add('active'); tab.scrollIntoView({ inline: 'center', behavior: 'smooth' }); }
+      if (tab) { tab.classList.add('active'); tab.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' }); }
       const panel = document.getElementById(`panel-${jour}`);
       if (panel) panel.classList.add('active');
     }
