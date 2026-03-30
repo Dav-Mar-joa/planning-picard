@@ -22,5 +22,13 @@
     "dateNaissance": "13/09/1986",
     "heuresHebdo": 23,
     "contrat": "CDI"
+  },
+  {
+    "matricule": "Po",
+    "nom": "B",
+    "prenom": "B",
+    "dateNaissance": "13/09/1986",
+    "heuresHebdo": 32,
+    "contrat": "CDI"
   }
 ]
