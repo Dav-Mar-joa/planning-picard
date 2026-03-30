@@ -38,5 +38,13 @@
     "dateNaissance": "13/09/1986",
     "heuresHebdo": 13,
     "contrat": "CDI"
+  },
+  {
+    "matricule": "H",
+    "nom": "H",
+    "prenom": "H",
+    "dateNaissance": "13/09/1986",
+    "heuresHebdo": 30,
+    "contrat": "CDI"
   }
 ]
