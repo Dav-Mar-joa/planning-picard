@@ -46,5 +46,13 @@
     "dateNaissance": "13/09/1986",
     "heuresHebdo": 10,
     "contrat": "CDI"
+  },
+  {
+    "matricule": "0005012",
+    "nom": "F",
+    "prenom": "f",
+    "dateNaissance": "13/09/1986",
+    "heuresHebdo": 35,
+    "contrat": "CDI"
   }
 ]
