@@ -202,7 +202,7 @@ block content
                   .collab-avatar #{collab.prenom.charAt(0)}#{collab.nom.charAt(0)}
                   .collab-info
                     .collab-name #{collab.prenom} #{collab.nom}
-                    .collab-id #{collab.matricule}
+                    .collab-id #{collab.matricule} &nbsp;(#{collab.numeroSite})
                   .collab-actions
                     button.btn.btn-ghost.btn-sm(type="button" onclick=`editerCollab(${idx})`) ✏
                     form(method="POST" action=`/admin/collaborateurs/delete?pwd=${pwd}` style="display:inline;" onsubmit="return confirm('Supprimer ?')")
@@ -265,6 +265,9 @@ block content
             .form-group
               label.form-label Matricule
               input.form-input(type="text" name="matricule" placeholder="00012345" required)
+            .form-group
+              label.form-label Numéro de site
+              input.form-input(type="text" name="numeroSite" placeholder="00012345" )  
             .flex.gap-2(style="flex-wrap:wrap;")
               .form-group(style="flex:1;min-width:140px;")
                 label.form-label Date de naissance
@@ -374,9 +377,11 @@ block scripts
       f.nom.value = c.nom;
       f.prenom.value = c.prenom;
       f.matricule.value = c.matricule;
+      f.numeroSite.value = c.numeroSite|| '';
       f.dateNaissance.value = c.dateNaissance || '';
       f.heuresHebdo.value = c.heuresHebdo;
       f.contrat.value = c.contrat;
+      console.log('Edit collab', c);
       document.getElementById('modal-collab').classList.add('open');
     }
     document.getElementById('modal-collab').addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalCollab(); });

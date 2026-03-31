@@ -118,15 +118,16 @@ router.post('/save', authAdmin, async (req, res) => {
 // ── SAVE COLLABORATEUR (ajout/modif) ──
 router.post('/collaborateurs/save', authAdmin, async (req, res) => {
   try {
-    const { pwd, matricule, nom, prenom, dateNaissance, heuresHebdo, contrat, editIndex } = req.body;
+    const { pwd, matricule, nom, prenom, numeroSite, dateNaissance, heuresHebdo, contrat, editIndex } = req.body;
     const liste = await lireCollaborateurs();
     const collab = {
       matricule: matricule.trim(),
+      numeroSite: numeroSite ? numeroSite.trim() : '',
       nom: nom.trim().toUpperCase(),
       prenom: prenom.trim(),
       dateNaissance: dateNaissance || '',
       heuresHebdo: parseFloat(heuresHebdo) || 0,
-      contrat: contrat || 'CDI'
+      contrat: contrat || 'CDI',
     };
     if (editIndex !== undefined && editIndex !== '' && liste[parseInt(editIndex)]) {
       liste[parseInt(editIndex)] = collab;
