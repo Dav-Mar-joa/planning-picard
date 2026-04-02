@@ -13,7 +13,7 @@ block headerRight
           if s === semaineCourante
             |  ★
   if tab === 'planning'
-    button.btn.btn-primary(type="submit" form="planning-form") 💾 
+    button.btn.btn-primary(type="submit" form="planning-form") 💾 Sauvegarder
   a.btn.btn-ghost.btn-sm(href="/") ← Planning
 
 block content
@@ -29,7 +29,7 @@ block content
               | Gestion du planning
               if semaineChoisie === semaineCourante
                 |  · 
-                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle; margin-left:1rem;") ● Semaine actuelle
+                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle;") ● Semaine actuelle
             else
               | Gestion des collaborateurs
 
@@ -48,13 +48,13 @@ block content
         .alert.alert-success
           | ✓ 
           if success === 'planning'
-            | Planning sauvegardé !
+            | Planning sauvegardé sur GitHub !
           else if success === 'collab'
             | Collaborateur enregistré !
           else if success === 'delete'
             | Collaborateur supprimé.
-          if success === 'deleted'
-            | Semaine supprimée.
+          else
+            | Opération réussie !
 
     //- ══════════════════════════════════
     //- TAB PLANNING
@@ -66,21 +66,6 @@ block content
         .section-header
           .section-title Semaine à éditer
           button.btn.btn-sm(type="button" onclick="ouvrirModalSemaine()") + Nouvelle semaine
-
-        //- Semaines existantes avec bouton supprimer
-        if semaines && semaines.length > 0
-          .flex.gap-1(style="flex-wrap:wrap;margin-bottom:1.25rem;")
-            each s in semaines
-              .flex.items-center(style="gap:0;")
-                a.week-chip(href=`/admin?pwd=${pwd}&s=${encodeURIComponent(s)}` class=s===semaineChoisie?'active':'')
-                  if s === semaineCourante
-                    span.current-dot
-                  | S#{s.split('/')[0]} · #{s.split('/')[1]}
-                button.btn.btn-ghost.btn-sm(
-                  type="button"
-                  style="padding:0.3rem 0.4rem;border-radius:0 4px 4px 0;border-left:none;color:var(--danger);"
-                  onclick=`deleteSemaine('${s}')`
-                ) ✕
 
         form#planning-form(method="POST" action=`/admin/save?pwd=${pwd}`)
           input(type="hidden" name="pwd" value=pwd)
@@ -96,10 +81,10 @@ block content
                   input.form-input(type="text" name="semaine" value=planning?planning.semaine:'' placeholder="14/2026" required)
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Début
-                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder=planning?planning.du:'ex: 30/03/26' style="color: planning&&planning.du ? '' : 'var(--text3)'")
+                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder="30/03/26")
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Fin
-                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder=planning?planning.au:'ex: 05/04/26' style="color: planning&&planning.au ? '' : 'var(--text3)'")
+                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder="05/04/26")
 
           //- Équipiers
           .section-header
@@ -121,7 +106,7 @@ block content
                       .form-group(style="margin-bottom:0;min-width:130px;flex:1;")
                         label.form-label Matricule
                         input.form-input(type="text" name=`employes[${i}][id]` value=emp.id placeholder="Matricule" readonly style="opacity:0.6;cursor:not-allowed;")
-                    //- button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
+                    button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
                   .employe-card-body
                     .jours-grid
                       each jour in jours
@@ -202,7 +187,7 @@ block content
                   .collab-avatar #{collab.prenom.charAt(0)}#{collab.nom.charAt(0)}
                   .collab-info
                     .collab-name #{collab.prenom} #{collab.nom}
-                    .collab-id #{collab.matricule} &nbsp;(Site : #{collab.numeroSite})
+                    .collab-id #{collab.matricule}
                   .collab-actions
                     button.btn.btn-ghost.btn-sm(type="button" onclick=`editerCollab(${idx})`) ✏
                     form(method="POST" action=`/admin/collaborateurs/delete?pwd=${pwd}` style="display:inline;" onsubmit="return confirm('Supprimer ?')")
@@ -223,27 +208,17 @@ block content
           button.modal-close(onclick="fermerModalSemaine()") ✕
         .modal-body
           .form-group
-            label.form-label Choisir la semaine
-            select.form-select#ms-semaine(onchange="onSemaineChange(this.value)")
-              each s in semainesDispo
-                - const dates = datesDeSemaine(s)
-                option(value=s selected=s===semaineCourante)
-                  | S#{s.split('/')[0]} · #{s.split('/')[1]}
-                  if s === semaineCourante
-                    |  ★ actuelle
-          .card(style="margin-top:1rem;background:var(--bg2);border:1px solid var(--border);")
-            .card-body(style="padding:0.85rem 1rem;")
-              .flex.items-center.justify-between
-                div
-                  .form-label(style="margin-bottom:2px;") Du
-                  div#ms-du-display(style="font-weight:700;font-size:0.95rem;color:var(--text);") —
-                div(style="color:var(--text3);font-size:1.2rem;") →
-                div
-                  .form-label(style="margin-bottom:2px;text-align:right;") Au
-                  div#ms-au-display(style="font-weight:700;font-size:0.95rem;color:var(--text);text-align:right;") —
+            label.form-label Numéro (ex: 22/2026)
+            input.form-input#ms-semaine(type="text" placeholder="22/2026")
+          .form-group
+            label.form-label Date début
+            input.form-input#ms-du(type="text" placeholder="26/05/26")
+          .form-group
+            label.form-label Date fin
+            input.form-input#ms-au(type="text" placeholder="01/06/26")
         .modal-footer
           button.btn(type="button" onclick="fermerModalSemaine()") Annuler
-          button.btn.btn-primary(type="button" onclick="creerSemaine()") Créer cette semaine
+          button.btn.btn-primary(type="button" onclick="creerSemaine()") Créer
 
     //- MODAL COLLABORATEUR
     .modal-overlay#modal-collab
@@ -265,9 +240,6 @@ block content
             .form-group
               label.form-label Matricule
               input.form-input(type="text" name="matricule" placeholder="00012345" required)
-            .form-group
-              label.form-label Numéro de site
-              input.form-input(type="text" name="numeroSite" placeholder="00012345" )  
             .flex.gap-2(style="flex-wrap:wrap;")
               .form-group(style="flex:1;min-width:140px;")
                 label.form-label Date de naissance
@@ -294,58 +266,15 @@ block scripts
     const LABELS = { lun:'Lundi', mar:'Mardi', mer:'Mercredi', jeu:'Jeudi', ven:'Vendredi', sam:'Samedi', dim:'Dimanche' };
     const COLLABS = !{JSON.stringify(collaborateurs || [])};
 
-    // ── SUPPRIMER SEMAINE
-    async function deleteSemaine(semaine) {
-      if (!confirm(`Supprimer la semaine ${semaine} ?`)) return;
-      try {
-        const res = await fetch('/admin/delete-semaine', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pwd: PWD, semaine })
-        });
-        const data = await res.json();
-        if (data.ok) {
-          window.location.href = `/admin?pwd=${PWD}&success=deleted`;
-        } else {
-          alert('Erreur : ' + (data.error || 'inconnue'));
-        }
-      } catch(e) {
-        alert('Erreur réseau : ' + e.message);
-      }
-    }
-
     // ── MODAL SEMAINE
-    const SEMAINE_COURANTE = '#{semaineCourante}';
-
-    function getDatesDeSemaine(semaine) {
-      // Calcul côté client identique à utils.js
-      const [week, year] = semaine.split('/').map(Number);
-      const jan4 = new Date(Date.UTC(year, 0, 4));
-      const dayOfWeek = jan4.getUTCDay() || 7;
-      const lundi = new Date(jan4);
-      lundi.setUTCDate(jan4.getUTCDate() - (dayOfWeek - 1) + (week - 1) * 7);
-      const dimanche = new Date(lundi);
-      dimanche.setUTCDate(lundi.getUTCDate() + 6);
-      const fmt = d => `${String(d.getUTCDate()).padStart(2,'0')}/${String(d.getUTCMonth()+1).padStart(2,'0')}/${String(d.getUTCFullYear()).slice(2)}`;
-      return { du: fmt(lundi), au: fmt(dimanche) };
-    }
-
-    function onSemaineChange(val) {
-      const dates = getDatesDeSemaine(val);
-      document.getElementById('ms-du-display').textContent = dates.du;
-      document.getElementById('ms-au-display').textContent = dates.au;
-    }
-
-    function ouvrirModalSemaine() {
-      const sel = document.getElementById('ms-semaine');
-      onSemaineChange(sel.value); // init dates
-      document.getElementById('modal-semaine').classList.add('open');
-    }
+    function ouvrirModalSemaine() { document.getElementById('modal-semaine').classList.add('open'); }
     function fermerModalSemaine() { document.getElementById('modal-semaine').classList.remove('open'); }
     function creerSemaine() {
-      const s = document.getElementById('ms-semaine').value;
-      const dates = getDatesDeSemaine(s);
-      window.location.href = `/admin?pwd=${PWD}&s=${encodeURIComponent(s)}&new=1&du=${encodeURIComponent(dates.du)}&au=${encodeURIComponent(dates.au)}`;
+      const s = document.getElementById('ms-semaine').value.trim();
+      const du = document.getElementById('ms-du').value.trim();
+      const au = document.getElementById('ms-au').value.trim();
+      if (!s) return;
+      window.location.href = `/admin?pwd=${PWD}&s=${encodeURIComponent(s)}&new=1&du=${encodeURIComponent(du)}&au=${encodeURIComponent(au)}`;
     }
     document.getElementById('modal-semaine').addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalSemaine(); });
 
@@ -377,11 +306,9 @@ block scripts
       f.nom.value = c.nom;
       f.prenom.value = c.prenom;
       f.matricule.value = c.matricule;
-      f.numeroSite.value = c.numeroSite|| '';
       f.dateNaissance.value = c.dateNaissance || '';
       f.heuresHebdo.value = c.heuresHebdo;
       f.contrat.value = c.contrat;
-      console.log('Edit collab', c);
       document.getElementById('modal-collab').classList.add('open');
     }
     document.getElementById('modal-collab').addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalCollab(); });

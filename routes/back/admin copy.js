@@ -1,20 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const {
-  lirePlanning, ecrirePlanning, listerSemaines,
-  supprimerPlanning, lireCollaborateurs, ecrireCollaborateurs
-} = require('../db');
-const {
-  calcMinutes, formatMinutes, calcHeures, formatHeures,
-  semaineActuelle, datesDeSemaine, listeSemainesDispo,
-  calcHeuresParJour, totalMois
-} = require('../utils');
-
+const { lirePlanning, ecrirePlanning, listerSemaines, supprimerPlanning, lireCollaborateurs, ecrireCollaborateurs } = require('../db');
+const { calcMinutes, formatMinutes,calcHeures, formatHeures, semaineActuelle, datesDeSemaine, listeSemainesDispo } = require('../utils');
 const JOURS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];
-const JOURS_LABELS = {
-  lun: 'Lundi', mar: 'Mardi', mer: 'Mercredi',
-  jeu: 'Jeudi', ven: 'Vendredi', sam: 'Samedi', dim: 'Dimanche'
-};
+const JOURS_LABELS = { lun: 'Lundi', mar: 'Mardi', mer: 'Mercredi', jeu: 'Jeudi', ven: 'Vendredi', sam: 'Samedi', dim: 'Dimanche' };
 
 function authAdmin(req, res, next) {
   const pwd = req.query.pwd || req.body.pwd;
@@ -40,41 +29,31 @@ router.get('/', authAdmin, async (req, res) => {
   const semaineChoisie = req.query.s || semaines[0] || null;
   const { data } = semaineChoisie ? await lirePlanning(semaineChoisie) : { data: null };
 
+  // Heures placées vs quota
   const heuresInfo = {};
   if (data && data.employes) {
     for (const emp of data.employes) {
-      const placed = calcMinutes(emp.planning); // minutes, recalculé depuis créneaux
+      const placed = calcMinutes(emp.planning);
       const collab = collaborateurs.find(c => c.matricule === emp.id);
-      const quotaMins = collab ? Math.round(collab.heuresHebdo * 60) : null;
+      const quota = collab ? collab.heuresHebdo : null;
       heuresInfo[emp.id || emp.nom] = {
-        placed,
-        fmt: formatMinutes(placed),
-        quota: quotaMins,
-        quotaFmt: quotaMins ? formatMinutes(quotaMins) : null,
-        over: quotaMins && placed > quotaMins,
-        perfect: quotaMins && Math.abs(placed - quotaMins) < 1
+        placed, fmt: formatMinutes(placed),
+        quota, quotaFmt: quota ? formatMinutes(quota) : null,
+        over: quota && placed > quota,
+        perfect: quota && Math.abs(placed - quota) < 0.1
       };
     }
   }
 
+  const semainesDispo = listeSemainesDispo();
   res.render('admin', {
     tab: 'planning',
     pwd: req.query.pwd,
-    planning: data,
-    semaines,
-    semaineChoisie,
-    semaineCourante,
-    collaborateurs,
-    jours: JOURS,
-    labels: JOURS_LABELS,
-    heuresInfo,
-    success: req.query.success,
-    semainesDispo: listeSemainesDispo(),
-    datesDeSemaine,
-    calcMinutes,
-    formatMinutes,
-    calcHeures,
-    formatHeures
+    planning: data, semaines, semaineChoisie, semaineCourante,
+    collaborateurs, jours: JOURS, labels: JOURS_LABELS,
+    heuresInfo, success: req.query.success,
+    semainesDispo, datesDeSemaine,
+    calcMinutes, formatMinutes, calcHeures, formatHeures
   });
 });
 
@@ -84,24 +63,19 @@ router.get('/collaborateurs', authAdmin, async (req, res) => {
   res.render('admin', {
     tab: 'collaborateurs',
     pwd: req.query.pwd,
-    collaborateurs,
-    success: req.query.success,
-    planning: null,
-    semaines: [],
-    semaineChoisie: null,
+    collaborateurs, success: req.query.success,
+    planning: null, semaines: [], semaineChoisie: null,
     semaineCourante: semaineActuelle(),
-    jours: JOURS,
-    labels: JOURS_LABELS,
-    heuresInfo: {},
-    semainesDispo: listeSemainesDispo(),
-    datesDeSemaine
+    jours: JOURS, labels: JOURS_LABELS, heuresInfo: {},
+    semainesDispo: listeSemainesDispo(), datesDeSemaine
   });
 });
 
 // ── DELETE PLANNING ──
 router.post('/delete-semaine', async (req, res) => {
   try {
-    const { pwd, semaine } = req.body;
+    const pwd = req.body.pwd;
+    const semaine = req.body.semaine;
     console.log('DELETE SEMAINE', { pwd: pwd ? '***' : 'MANQUANT', semaine });
     if (pwd !== process.env.ADMIN_PASSWORD) {
       return res.status(403).json({ error: 'Non autorisé' });
@@ -118,6 +92,36 @@ router.post('/delete-semaine', async (req, res) => {
 });
 
 // ── SAVE PLANNING ──
+// router.post('/save', authAdmin, async (req, res) => {
+//   try {
+//     const { pwd, semaine, du, au } = req.body;
+//     const employes = [];
+//     const rawEmployes = req.body.employes || [];
+//     for (let i = 0; i < rawEmployes.length; i++) {
+//       const emp = rawEmployes[i];
+//       const planning = {};
+//       for (const jour of JOURS) {
+//         const creneaux = emp[jour] || [];
+//         planning[jour] = creneaux.filter(c => c.debut && c.fin).map(c => ({ debut: c.debut, fin: c.fin }));
+//       }
+//       if (emp.nom && emp.nom.trim()) {
+//         employes.push({ nom: emp.nom.trim(), id: emp.id || '', planning });
+//       }
+//     }
+//     // Si pas rempli, calculer depuis la semaine
+//     if (!du || !au) {
+//       const dates = datesDeSemaine(semaine);
+//       du = du || dates.du;
+//       au = au || dates.au;
+//     }
+//     await ecrirePlanning({ semaine, du, au, employes });
+//     res.redirect(`/admin?pwd=${pwd}&s=${encodeURIComponent(semaine)}&success=planning`);
+//   } catch (err) {
+//     res.status(500).send(`Erreur : ${err.message}`);
+//   }
+// });
+
+// ── SAVE PLANNING ──
 router.post('/save', authAdmin, async (req, res) => {
   try {
     const { pwd, semaine } = req.body;
@@ -131,46 +135,44 @@ router.post('/save', authAdmin, async (req, res) => {
 
     const employes = [];
     const rawEmployes = req.body.employes || [];
-
-    console.log('SAVE - rawEmployes reçus:', JSON.stringify(rawEmployes, null, 2));
-
     for (let i = 0; i < rawEmployes.length; i++) {
       const emp = rawEmployes[i];
       const planning = {};
-
       for (const jour of JOURS) {
         const creneaux = emp[jour] || [];
-        planning[jour] = creneaux
-          .filter(c => c.debut && c.fin)
-          .map(c => ({ debut: c.debut, fin: c.fin }));
+        planning[jour] = creneaux.filter(c => c.debut && c.fin).map(c => ({ debut: c.debut, fin: c.fin }));
       }
-
-      console.log(`SAVE - planning construit pour ${emp.nom}:`, JSON.stringify(planning));
-
       if (emp.nom && emp.nom.trim()) {
-        const { heuresParJour, totalSemaine } = calcHeuresParJour(planning);
-
-        console.log('SAVE - heuresParJour calculé:', heuresParJour, '| totalSemaine:', totalSemaine);
-
+        // Calcul heures par jour
+        const heuresParJour = {};
+        let totalSemaine = 0;
+        for (const jour of JOURS) {
+          let h = 0;
+          for (const c of planning[jour]) {
+            const [dh, dm] = c.debut.split(':').map(Number);
+            const [fh, fm] = c.fin.split(':').map(Number);
+            h += (fh * 60 + fm - (dh * 60 + dm)) / 60;
+          }
+          heuresParJour[jour] = Math.round(h * 100) / 100;
+          totalSemaine += heuresParJour[jour];
+        }
         employes.push({
           nom: emp.nom.trim(),
           id: emp.id || '',
           planning,
-          heuresParJour,  // minutes entières ex: { lun: 55, mar: 0, ... }
-          totalSemaine    // minutes entières ex: 55
+          heuresParJour,
+          totalSemaine: Math.round(totalSemaine * 100) / 100
         });
       }
     }
-
     await ecrirePlanning({ semaine, du, au, employes });
     res.redirect(`/admin?pwd=${pwd}&s=${encodeURIComponent(semaine)}&success=planning`);
   } catch (err) {
-    console.error('SAVE ERROR:', err);
     res.status(500).send(`Erreur : ${err.message}`);
   }
 });
 
-// ── SAVE COLLABORATEUR ──
+// ── SAVE COLLABORATEUR (ajout/modif) ──
 router.post('/collaborateurs/save', authAdmin, async (req, res) => {
   try {
     const { pwd, matricule, nom, prenom, numeroSite, dateNaissance, heuresHebdo, contrat, editIndex } = req.body;

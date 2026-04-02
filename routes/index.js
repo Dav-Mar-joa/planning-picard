@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { lirePlanning, listerSemaines, lireCollaborateurs } = require('../github');
+const { lirePlanning, listerSemaines, lireCollaborateurs } = require('../db');
 const { calcHeures, formatHeures, semaineActuelle } = require('../utils');
 
 const JOURS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];

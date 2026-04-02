@@ -13,7 +13,19 @@ block headerRight
           if s === semaineCourante
             |  ★
   if tab === 'planning'
-    button.btn.btn-primary(type="submit" form="planning-form") 💾 
+    button.btn.btn-primary(type="submit" form="planning-form") 💾
+  if tab === 'mois'
+    form(method="GET" action=`/admin/mois` style="display:flex;gap:0.5rem;align-items:center;")
+      input(type="hidden" name="pwd" value=pwd)
+      select.form-select(name="emp" style="font-size:0.82rem;padding:0.35rem 0.65rem;" onchange="this.form.submit()")
+        each c in collaborateurs
+          option(value=c.matricule selected=c.matricule===empChoisi) #{c.prenom} #{c.nom}
+      select.form-select(name="mois" style="font-size:0.82rem;width:auto;padding:0.35rem 0.65rem;" onchange="this.form.submit()")
+        each m, idx in ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+          option(value=idx+1 selected=idx+1===moisChoisi) #{m}
+      select.form-select(name="annee" style="font-size:0.82rem;width:auto;padding:0.35rem 0.65rem;" onchange="this.form.submit()")
+        each y in [2024,2025,2026,2027]
+          option(value=y selected=y===anneeChoisie) #{y}
   a.btn.btn-ghost.btn-sm(href="/") ← Planning
 
 block content
@@ -29,7 +41,9 @@ block content
               | Gestion du planning
               if semaineChoisie === semaineCourante
                 |  · 
-                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle; margin-left:1rem;") ● Semaine actuelle
+                span.badge.badge-green(style="font-size:0.65rem;vertical-align:middle;margin-left:1rem;") ● Semaine actuelle
+            else if tab === 'mois'
+              | Suivi mensuel · #{labelMois} #{anneeChoisie}
             else
               | Gestion des collaborateurs
 
@@ -41,6 +55,9 @@ block content
       a.admin-tab(href=`/admin/collaborateurs?pwd=${pwd}` class=tab==='collaborateurs'?'active':'')
         span.tab-icon 👥
         | Collaborateurs
+      a.admin-tab(href=`/admin/mois?pwd=${pwd}` class=tab==='mois'?'active':'')
+        span.tab-icon 📊
+        | Mois
 
     //- SUCCESS
     if success
@@ -62,12 +79,10 @@ block content
     if tab === 'planning'
       .p-container
 
-        //- Nouvelle semaine
         .section-header
           .section-title Semaine à éditer
           button.btn.btn-sm(type="button" onclick="ouvrirModalSemaine()") + Nouvelle semaine
 
-        //- Semaines existantes avec bouton supprimer
         if semaines && semaines.length > 0
           .flex.gap-1(style="flex-wrap:wrap;margin-bottom:1.25rem;")
             each s in semaines
@@ -85,7 +100,6 @@ block content
         form#planning-form(method="POST" action=`/admin/save?pwd=${pwd}`)
           input(type="hidden" name="pwd" value=pwd)
 
-          //- Infos semaine
           .card(style="margin-bottom:1.25rem;")
             .card-header
               span(style="font-family:var(--font-display);font-weight:700;font-size:0.9rem;") Informations
@@ -96,12 +110,11 @@ block content
                   input.form-input(type="text" name="semaine" value=planning?planning.semaine:'' placeholder="14/2026" required)
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Début
-                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder="30/03/26")
+                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder=planning?planning.du:'ex: 30/03/26')
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Fin
-                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder="05/04/26")
+                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder=planning?planning.au:'ex: 05/04/26')
 
-          //- Équipiers
           .section-header
             .section-title Équipiers
           .flex.flex-col.gap-2#employes-list
@@ -121,7 +134,6 @@ block content
                       .form-group(style="margin-bottom:0;min-width:130px;flex:1;")
                         label.form-label Matricule
                         input.form-input(type="text" name=`employes[${i}][id]` value=emp.id placeholder="Matricule" readonly style="opacity:0.6;cursor:not-allowed;")
-                    //- button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
                   .employe-card-body
                     .jours-grid
                       each jour in jours
@@ -138,15 +150,28 @@ block content
                     .hours-admin-display
                       .hours-admin-label Heures placées :
                       .hours-admin-value(class=hi&&hi.over?'text-danger':hi&&hi.perfect?'text-success':'text-accent' data-hours-val)
-                        | #{hi ? hi.fmt : '0h'}
+                        | #{hi ? hi.fmt : '0h00'}
                       if hi && hi.quota
                         .hours-admin-quota / #{hi.quotaFmt} quota
                         if hi.over
                           span.badge.badge-red(style="margin-left:0.4rem;") Dépassé
                         else if hi.perfect
                           span.badge.badge-green(style="margin-left:0.4rem;") ✓
+                    //- Compteurs semaine/mois si disponibles
+                    if emp.compteurSemaine
+                      .hours-admin-display(style="margin-top:0.4rem;gap:0.75rem;font-size:0.78rem;")
+                        span(style="color:var(--text3);") S#{emp.compteurSemaine.numeroSemaine} solde :
+                        span(class=emp.compteurSemaine.solde>=0?'text-success':'text-danger' style="font-weight:700;")
+                          | #{emp.compteurSemaine.solde>=0?'+':''}#{emp.compteurSemaine.soldeFmt}
+                        if emp.compteurMois
+                          span(style="color:var(--text3);margin-left:0.5rem;") #{emp.compteurMois.labelMois} :
+                          span(class=emp.compteurMois.solde>=0?'text-success':'text-danger' style="font-weight:700;")
+                            | #{emp.compteurMois.solde>=0?'+':''}#{emp.compteurMois.soldeFmt}
+                        if emp.soldeAnnuel !== undefined
+                          span(style="color:var(--text3);margin-left:0.5rem;") Année :
+                          span(class=emp.soldeAnnuel>=0?'text-success':'text-danger' style="font-weight:700;")
+                            | #{emp.soldeAnnuel>=0?'+':''}#{emp.soldeAnnuelFmt}
             else
-              //- Carte vide
               .employe-card(data-index="0")
                 .employe-card-header
                   .employe-card-header-left
@@ -175,7 +200,7 @@ block content
                           input(type="time" name=`employes[0][${jour}][1][fin]` oninput="recalcHeures()")
                   .hours-admin-display
                     .hours-admin-label Heures placées :
-                    .hours-admin-value.text-accent(data-hours-val) 0h
+                    .hours-admin-value.text-accent(data-hours-val) 0h00
                     .hours-admin-quota(data-quota-label) —
 
           button.add-btn-dashed(type="button" onclick="ajouterEmploye()") + Ajouter un équipier
@@ -202,7 +227,7 @@ block content
                   .collab-avatar #{collab.prenom.charAt(0)}#{collab.nom.charAt(0)}
                   .collab-info
                     .collab-name #{collab.prenom} #{collab.nom}
-                    .collab-id #{collab.matricule} &nbsp;(#{collab.numeroSite})
+                    .collab-id #{collab.matricule} &nbsp;(Site : #{collab.numeroSite})
                   .collab-actions
                     button.btn.btn-ghost.btn-sm(type="button" onclick=`editerCollab(${idx})`) ✏
                     form(method="POST" action=`/admin/collaborateurs/delete?pwd=${pwd}` style="display:inline;" onsubmit="return confirm('Supprimer ?')")
@@ -214,6 +239,127 @@ block content
                   span.badge.badge-accent #{collab.heuresHebdo}h/sem
                   if collab.dateNaissance
                     span.badge.badge-ghost #{collab.dateNaissance}
+
+    //- ══════════════════════════════════
+    //- TAB MOIS
+    //- ══════════════════════════════════
+        //- ══════════════════════════════════
+    //- TAB MOIS
+    //- ══════════════════════════════════
+    else if tab === 'mois'
+      .p-container
+
+        //- SÉLECTEUR MOIS / ANNÉE
+        .flex.gap-2(style="flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;")
+          form(method="GET" action="/admin/mois" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;")
+            input(type="hidden" name="pwd" value=pwd)
+            select.form-select(name="mois" style="font-size:0.85rem;width:auto;" onchange="this.form.submit()")
+              each m, idx in ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+                option(value=idx+1 selected=idx+1===moisChoisi) #{m}
+            select.form-select(name="annee" style="font-size:0.85rem;width:auto;" onchange="this.form.submit()")
+              each y in [2024,2025,2026,2027]
+                option(value=y selected=y===anneeChoisie) #{y}
+            span(style="color:var(--text3);font-size:0.82rem;") #{semainesDuMois.length} semaine(s)
+
+        //- CARTE PAR COLLABORATEUR
+        if collaborateurs.length === 0
+          .no-data
+            .no-data-icon 📊
+            .no-data-title Aucun collaborateur
+        else
+          .flex.flex-col.gap-2
+            each collab in collaborateurs
+              - const stats = statsParCollab[collab.matricule]
+              .card
+                .card-body(style="padding:1rem 1.25rem;")
+
+                  //- En-tête collaborateur
+                  .flex.items-center(style="gap:0.75rem;margin-bottom:0.85rem;")
+                    .collab-avatar(style="width:2rem;height:2rem;font-size:0.75rem;flex-shrink:0;") #{collab.prenom.charAt(0)}#{collab.nom.charAt(0)}
+                    div
+                      div(style="font-weight:700;font-size:0.9rem;") #{collab.prenom} #{collab.nom}
+                      div(style="font-size:0.72rem;color:var(--text3);") #{collab.matricule} · #{collab.heuresHebdo}h/sem · #{collab.contrat}
+
+                  if !stats
+                    div(style="color:var(--text3);font-size:0.82rem;font-style:italic;") Aucun planning saisi ce mois.
+                  else
+                    //- KPI ROW
+                    .flex.gap-2(style="flex-wrap:wrap;margin-bottom:0.85rem;")
+
+                      //- Réalisé mois
+                      .kpi-box
+                        .kpi-label Réalisé #{labelMois}
+                        .kpi-value.text-accent #{stats.realiseMoisFmt}
+                        .kpi-sub quota #{stats.quotaMoisFmt}
+
+                      //- Solde mois
+                      .kpi-box
+                        .kpi-label Solde mois
+                        .kpi-value(style=`color:${stats.soldeMois>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`)
+                          | #{stats.soldeMois>=0?'+':''}#{stats.soldeMoisFmt}
+                        .kpi-sub #{stats.nbSemaines} sem. × #{stats.quotaHebdoFmt}
+
+                      //- Solde annuel
+                      .kpi-box
+                        .kpi-label Solde #{anneeChoisie}
+                        .kpi-value(style=`color:${stats.soldeAnnuel>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`)
+                          | #{stats.soldeAnnuel>=0?'+':''}#{stats.soldeAnnuelFmt}
+                        .kpi-sub depuis S1
+
+                    //- SEMAINES DU MOIS
+                    .flex.gap-1(style="flex-wrap:wrap;")
+                      each s in stats.semaines
+                        a.semaine-pill(
+                          href=`/admin?pwd=${pwd}&s=${encodeURIComponent(s.semaine)}`
+                          style=`border-color:${s.solde>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`
+                        )
+                          span(style="font-size:0.7rem;color:var(--text3);") S#{s.semaine.split('/')[0]}
+                          span(style="font-weight:700;font-size:0.82rem;") #{s.realiseFmt}
+                          span(style=`font-size:0.75rem;font-weight:700;color:${s.solde>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`)
+                            | #{s.solde>=0?'+':''}#{s.soldeFmt}
+
+        style.
+          .kpi-box {
+            flex: 1;
+            min-width: 120px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+          }
+          .kpi-label {
+            font-size: 0.68rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 0.2rem;
+          }
+          .kpi-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            line-height: 1.1;
+          }
+          .kpi-sub {
+            font-size: 0.68rem;
+            color: var(--text3);
+            margin-top: 0.15rem;
+          }
+          .semaine-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            padding: 0.4rem 0.65rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-decoration: none;
+            transition: opacity 0.15s;
+            min-width: 60px;
+          }
+          .semaine-pill:hover { opacity: 0.75; }
+
 
     //- MODAL NOUVELLE SEMAINE
     .modal-overlay#modal-semaine
@@ -267,7 +413,7 @@ block content
               input.form-input(type="text" name="matricule" placeholder="00012345" required)
             .form-group
               label.form-label Numéro de site
-              input.form-input(type="text" name="numeroSite" placeholder="00012345" )  
+              input.form-input(type="text" name="numeroSite" placeholder="00012345")
             .flex.gap-2(style="flex-wrap:wrap;")
               .form-group(style="flex:1;min-width:140px;")
                 label.form-label Date de naissance
@@ -318,7 +464,6 @@ block scripts
     const SEMAINE_COURANTE = '#{semaineCourante}';
 
     function getDatesDeSemaine(semaine) {
-      // Calcul côté client identique à utils.js
       const [week, year] = semaine.split('/').map(Number);
       const jan4 = new Date(Date.UTC(year, 0, 4));
       const dayOfWeek = jan4.getUTCDay() || 7;
@@ -338,7 +483,7 @@ block scripts
 
     function ouvrirModalSemaine() {
       const sel = document.getElementById('ms-semaine');
-      onSemaineChange(sel.value); // init dates
+      if (sel) { onSemaineChange(sel.value); }
       document.getElementById('modal-semaine').classList.add('open');
     }
     function fermerModalSemaine() { document.getElementById('modal-semaine').classList.remove('open'); }
@@ -347,9 +492,9 @@ block scripts
       const dates = getDatesDeSemaine(s);
       window.location.href = `/admin?pwd=${PWD}&s=${encodeURIComponent(s)}&new=1&du=${encodeURIComponent(dates.du)}&au=${encodeURIComponent(dates.au)}`;
     }
-    document.getElementById('modal-semaine').addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalSemaine(); });
+    const modalSemaine = document.getElementById('modal-semaine');
+    if (modalSemaine) modalSemaine.addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalSemaine(); });
 
-    // Pré-remplir si ?new=1
     const params = new URLSearchParams(window.location.search);
     if (params.get('new') === '1') {
       const si = document.querySelector('input[name="semaine"]');
@@ -377,16 +522,16 @@ block scripts
       f.nom.value = c.nom;
       f.prenom.value = c.prenom;
       f.matricule.value = c.matricule;
-      f.numeroSite.value = c.numeroSite|| '';
+      f.numeroSite.value = c.numeroSite || '';
       f.dateNaissance.value = c.dateNaissance || '';
       f.heuresHebdo.value = c.heuresHebdo;
       f.contrat.value = c.contrat;
-      console.log('Edit collab', c);
       document.getElementById('modal-collab').classList.add('open');
     }
-    document.getElementById('modal-collab').addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalCollab(); });
+    const modalCollab = document.getElementById('modal-collab');
+    if (modalCollab) modalCollab.addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalCollab(); });
 
-    // ── REMPLIR MATRICULE depuis select collaborateur
+    // ── REMPLIR MATRICULE
     function remplirMatricule(select, idx) {
       const opt = select.options[select.selectedIndex];
       const id = opt.dataset.id || '';
@@ -435,7 +580,6 @@ block scripts
     function ajouterEmploye() {
       const i = getNextIndex();
       const list = document.getElementById('employes-list');
-
       let joursHtml = '';
       JOURS.forEach(jour => {
         const short = LABELS[jour].substring(0,3);
@@ -453,11 +597,9 @@ block scripts
           </div>
         </div>`;
       });
-
       const collabOptions = COLLABS.map(c =>
         `<option value="${c.nom} ${c.prenom}" data-id="${c.matricule}" data-quota="${c.heuresHebdo}">${c.nom} ${c.prenom}</option>`
       ).join('');
-
       const card = document.createElement('div');
       card.className = 'employe-card';
       card.dataset.index = i;
@@ -482,7 +624,7 @@ block scripts
           <div class="jours-grid">${joursHtml}</div>
           <div class="hours-admin-display">
             <div class="hours-admin-label">Heures placées :</div>
-            <div class="hours-admin-value text-accent" data-hours-val>0h</div>
+            <div class="hours-admin-value text-accent" data-hours-val>0h00</div>
             <div class="hours-admin-quota" data-quota-label>—</div>
           </div>
         </div>`;

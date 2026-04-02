@@ -1,20 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {
-  lirePlanning, ecrirePlanning, listerSemaines,
-  supprimerPlanning, lireCollaborateurs, ecrireCollaborateurs
-} = require('../db');
-const {
-  calcMinutes, formatMinutes, calcHeures, formatHeures,
-  semaineActuelle, datesDeSemaine, listeSemainesDispo,
-  calcHeuresParJour, totalMois
-} = require('../utils');
+const { lirePlanning, ecrirePlanning, listerSemaines, lireCollaborateurs, ecrireCollaborateurs } = require('../github');
+const { calcHeures, formatHeures, semaineActuelle } = require('../utils');
 
 const JOURS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];
-const JOURS_LABELS = {
-  lun: 'Lundi', mar: 'Mardi', mer: 'Mercredi',
-  jeu: 'Jeudi', ven: 'Vendredi', sam: 'Samedi', dim: 'Dimanche'
-};
+const JOURS_LABELS = { lun: 'Lundi', mar: 'Mardi', mer: 'Mercredi', jeu: 'Jeudi', ven: 'Vendredi', sam: 'Samedi', dim: 'Dimanche' };
 
 function authAdmin(req, res, next) {
   const pwd = req.query.pwd || req.body.pwd;
@@ -40,19 +30,18 @@ router.get('/', authAdmin, async (req, res) => {
   const semaineChoisie = req.query.s || semaines[0] || null;
   const { data } = semaineChoisie ? await lirePlanning(semaineChoisie) : { data: null };
 
+  // Heures placées vs quota
   const heuresInfo = {};
   if (data && data.employes) {
     for (const emp of data.employes) {
-      const placed = calcMinutes(emp.planning); // minutes, recalculé depuis créneaux
+      const placed = calcHeures(emp.planning);
       const collab = collaborateurs.find(c => c.matricule === emp.id);
-      const quotaMins = collab ? Math.round(collab.heuresHebdo * 60) : null;
+      const quota = collab ? collab.heuresHebdo : null;
       heuresInfo[emp.id || emp.nom] = {
-        placed,
-        fmt: formatMinutes(placed),
-        quota: quotaMins,
-        quotaFmt: quotaMins ? formatMinutes(quotaMins) : null,
-        over: quotaMins && placed > quotaMins,
-        perfect: quotaMins && Math.abs(placed - quotaMins) < 1
+        placed, fmt: formatHeures(placed),
+        quota, quotaFmt: quota ? formatHeures(quota) : null,
+        over: quota && placed > quota,
+        perfect: quota && Math.abs(placed - quota) < 0.1
       };
     }
   }
@@ -60,21 +49,10 @@ router.get('/', authAdmin, async (req, res) => {
   res.render('admin', {
     tab: 'planning',
     pwd: req.query.pwd,
-    planning: data,
-    semaines,
-    semaineChoisie,
-    semaineCourante,
-    collaborateurs,
-    jours: JOURS,
-    labels: JOURS_LABELS,
-    heuresInfo,
-    success: req.query.success,
-    semainesDispo: listeSemainesDispo(),
-    datesDeSemaine,
-    calcMinutes,
-    formatMinutes,
-    calcHeures,
-    formatHeures
+    planning: data, semaines, semaineChoisie, semaineCourante,
+    collaborateurs, jours: JOURS, labels: JOURS_LABELS,
+    heuresInfo, success: req.query.success,
+    calcHeures, formatHeures
   });
 });
 
@@ -84,105 +62,50 @@ router.get('/collaborateurs', authAdmin, async (req, res) => {
   res.render('admin', {
     tab: 'collaborateurs',
     pwd: req.query.pwd,
-    collaborateurs,
-    success: req.query.success,
-    planning: null,
-    semaines: [],
-    semaineChoisie: null,
+    collaborateurs, success: req.query.success,
+    // placeholders requis par le layout
+    planning: null, semaines: [], semaineChoisie: null,
     semaineCourante: semaineActuelle(),
-    jours: JOURS,
-    labels: JOURS_LABELS,
-    heuresInfo: {},
-    semainesDispo: listeSemainesDispo(),
-    datesDeSemaine
+    jours: JOURS, labels: JOURS_LABELS, heuresInfo: {}
   });
-});
-
-// ── DELETE PLANNING ──
-router.post('/delete-semaine', async (req, res) => {
-  try {
-    const { pwd, semaine } = req.body;
-    console.log('DELETE SEMAINE', { pwd: pwd ? '***' : 'MANQUANT', semaine });
-    if (pwd !== process.env.ADMIN_PASSWORD) {
-      return res.status(403).json({ error: 'Non autorisé' });
-    }
-    if (!semaine) {
-      return res.status(400).json({ error: 'Semaine manquante' });
-    }
-    await supprimerPlanning(semaine);
-    res.json({ ok: true });
-  } catch (err) {
-    console.error('Erreur suppression:', err.message);
-    res.status(500).json({ error: err.message });
-  }
 });
 
 // ── SAVE PLANNING ──
 router.post('/save', authAdmin, async (req, res) => {
   try {
-    const { pwd, semaine } = req.body;
-    let { du, au } = req.body;
-
-    if (!du || !au) {
-      const dates = datesDeSemaine(semaine);
-      du = du || dates.du;
-      au = au || dates.au;
-    }
-
+    const { pwd, semaine, du, au } = req.body;
     const employes = [];
     const rawEmployes = req.body.employes || [];
-
-    console.log('SAVE - rawEmployes reçus:', JSON.stringify(rawEmployes, null, 2));
-
     for (let i = 0; i < rawEmployes.length; i++) {
       const emp = rawEmployes[i];
       const planning = {};
-
       for (const jour of JOURS) {
         const creneaux = emp[jour] || [];
-        planning[jour] = creneaux
-          .filter(c => c.debut && c.fin)
-          .map(c => ({ debut: c.debut, fin: c.fin }));
+        planning[jour] = creneaux.filter(c => c.debut && c.fin).map(c => ({ debut: c.debut, fin: c.fin }));
       }
-
-      console.log(`SAVE - planning construit pour ${emp.nom}:`, JSON.stringify(planning));
-
       if (emp.nom && emp.nom.trim()) {
-        const { heuresParJour, totalSemaine } = calcHeuresParJour(planning);
-
-        console.log('SAVE - heuresParJour calculé:', heuresParJour, '| totalSemaine:', totalSemaine);
-
-        employes.push({
-          nom: emp.nom.trim(),
-          id: emp.id || '',
-          planning,
-          heuresParJour,  // minutes entières ex: { lun: 55, mar: 0, ... }
-          totalSemaine    // minutes entières ex: 55
-        });
+        employes.push({ nom: emp.nom.trim(), id: emp.id || '', planning });
       }
     }
-
     await ecrirePlanning({ semaine, du, au, employes });
     res.redirect(`/admin?pwd=${pwd}&s=${encodeURIComponent(semaine)}&success=planning`);
   } catch (err) {
-    console.error('SAVE ERROR:', err);
     res.status(500).send(`Erreur : ${err.message}`);
   }
 });
 
-// ── SAVE COLLABORATEUR ──
+// ── SAVE COLLABORATEUR (ajout/modif) ──
 router.post('/collaborateurs/save', authAdmin, async (req, res) => {
   try {
-    const { pwd, matricule, nom, prenom, numeroSite, dateNaissance, heuresHebdo, contrat, editIndex } = req.body;
+    const { pwd, matricule, nom, prenom, dateNaissance, heuresHebdo, contrat, editIndex } = req.body;
     const liste = await lireCollaborateurs();
     const collab = {
       matricule: matricule.trim(),
-      numeroSite: numeroSite ? numeroSite.trim() : '',
       nom: nom.trim().toUpperCase(),
       prenom: prenom.trim(),
       dateNaissance: dateNaissance || '',
       heuresHebdo: parseFloat(heuresHebdo) || 0,
-      contrat: contrat || 'CDI',
+      contrat: contrat || 'CDI'
     };
     if (editIndex !== undefined && editIndex !== '' && liste[parseInt(editIndex)]) {
       liste[parseInt(editIndex)] = collab;
