@@ -17,6 +17,9 @@ block headerRight
   if tab === 'mois'
     form(method="GET" action=`/admin/mois` style="display:flex;gap:0.5rem;align-items:center;")
       input(type="hidden" name="pwd" value=pwd)
+      select.form-select(name="emp" style="font-size:0.82rem;padding:0.35rem 0.65rem;" onchange="this.form.submit()")
+        each c in collaborateurs
+          option(value=c.matricule selected=c.matricule===empChoisi) #{c.prenom} #{c.nom}
       select.form-select(name="mois" style="font-size:0.82rem;width:auto;padding:0.35rem 0.65rem;" onchange="this.form.submit()")
         each m, idx in ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
           option(value=idx+1 selected=idx+1===moisChoisi) #{m}
@@ -28,6 +31,7 @@ block headerRight
 block content
   .main-content
 
+    //- HERO
     .page-hero
       .page-hero-inner
         div
@@ -43,13 +47,11 @@ block content
             else
               | Gestion des collaborateurs
 
+    //- TABS
     .admin-tabs
       a.admin-tab(href=`/admin?pwd=${pwd}` class=tab==='planning'?'active':'')
         span.tab-icon 📅
         | Planning
-      a.admin-tab(href=`/?pwd=${pwd}` class=tab==='planning'?'active':'')
-        span.tab-icon 📅
-        | Planning (public)
       a.admin-tab(href=`/admin/collaborateurs?pwd=${pwd}` class=tab==='collaborateurs'?'active':'')
         span.tab-icon 👥
         | Collaborateurs
@@ -57,6 +59,7 @@ block content
         span.tab-icon 📊
         | Mois
 
+    //- SUCCESS
     if success
       .p-container
         .alert.alert-success
@@ -107,10 +110,10 @@ block content
                   input.form-input(type="text" name="semaine" value=planning?planning.semaine:'' placeholder="14/2026" required)
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Début
-                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder='ex: 30/03/26')
+                  input.form-input(type="text" name="du" value=planning?planning.du:'' placeholder=planning?planning.du:'ex: 30/03/26')
                 .form-group(style="flex:1;min-width:130px;margin-bottom:0;")
                   label.form-label Fin
-                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder='ex: 05/04/26')
+                  input.form-input(type="text" name="au" value=planning?planning.au:'' placeholder=planning?planning.au:'ex: 05/04/26')
 
           .section-header
             .section-title Équipiers
@@ -130,9 +133,7 @@ block content
                             option(value=`${c.nom} ${c.prenom}` selected=`${c.nom} ${c.prenom}`===emp.nom) #{c.nom} #{c.prenom}
                       .form-group(style="margin-bottom:0;min-width:130px;flex:1;")
                         label.form-label Matricule
-                        input.form-input(type="text" name=`employes[${i}][id]` value=emp.id readonly style="opacity:0.6;cursor:not-allowed;")
-                    //- ✕ sur les cartes existantes
-                    button.btn.btn-danger.btn-sm(type="button" onclick="supprimerEmploye(this)") ✕
+                        input.form-input(type="text" name=`employes[${i}][id]` value=emp.id placeholder="Matricule" readonly style="opacity:0.6;cursor:not-allowed;")
                   .employe-card-body
                     .jours-grid
                       each jour in jours
@@ -156,6 +157,7 @@ block content
                           span.badge.badge-red(style="margin-left:0.4rem;") Dépassé
                         else if hi.perfect
                           span.badge.badge-green(style="margin-left:0.4rem;") ✓
+                    //- Compteurs semaine/mois si disponibles
                     if emp.compteurSemaine
                       .hours-admin-display(style="margin-top:0.4rem;gap:0.75rem;font-size:0.78rem;")
                         span(style="color:var(--text3);") S#{emp.compteurSemaine.numeroSemaine} solde :
@@ -241,9 +243,13 @@ block content
     //- ══════════════════════════════════
     //- TAB MOIS
     //- ══════════════════════════════════
+        //- ══════════════════════════════════
+    //- TAB MOIS
+    //- ══════════════════════════════════
     else if tab === 'mois'
       .p-container
 
+        //- SÉLECTEUR MOIS / ANNÉE
         .flex.gap-2(style="flex-wrap:wrap;align-items:center;margin-bottom:1.5rem;")
           form(method="GET" action="/admin/mois" style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;")
             input(type="hidden" name="pwd" value=pwd)
@@ -255,6 +261,7 @@ block content
                 option(value=y selected=y===anneeChoisie) #{y}
             span(style="color:var(--text3);font-size:0.82rem;") #{semainesDuMois.length} semaine(s)
 
+        //- CARTE PAR COLLABORATEUR
         if collaborateurs.length === 0
           .no-data
             .no-data-icon 📊
@@ -265,29 +272,41 @@ block content
               - const stats = statsParCollab[collab.matricule]
               .card
                 .card-body(style="padding:1rem 1.25rem;")
+
+                  //- En-tête collaborateur
                   .flex.items-center(style="gap:0.75rem;margin-bottom:0.85rem;")
                     .collab-avatar(style="width:2rem;height:2rem;font-size:0.75rem;flex-shrink:0;") #{collab.prenom.charAt(0)}#{collab.nom.charAt(0)}
                     div
                       div(style="font-weight:700;font-size:0.9rem;") #{collab.prenom} #{collab.nom}
                       div(style="font-size:0.72rem;color:var(--text3);") #{collab.matricule} · #{collab.heuresHebdo}h/sem · #{collab.contrat}
+
                   if !stats
                     div(style="color:var(--text3);font-size:0.82rem;font-style:italic;") Aucun planning saisi ce mois.
                   else
+                    //- KPI ROW
                     .flex.gap-2(style="flex-wrap:wrap;margin-bottom:0.85rem;")
+
+                      //- Réalisé mois
                       .kpi-box
                         .kpi-label Réalisé #{labelMois}
                         .kpi-value.text-accent #{stats.realiseMoisFmt}
                         .kpi-sub quota #{stats.quotaMoisFmt}
+
+                      //- Solde mois
                       .kpi-box
                         .kpi-label Solde mois
                         .kpi-value(style=`color:${stats.soldeMois>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`)
                           | #{stats.soldeMois>=0?'+':''}#{stats.soldeMoisFmt}
                         .kpi-sub #{stats.nbSemaines} sem. × #{stats.quotaHebdoFmt}
+
+                      //- Solde annuel
                       .kpi-box
                         .kpi-label Solde #{anneeChoisie}
                         .kpi-value(style=`color:${stats.soldeAnnuel>=0?'var(--success,#4ade80)':'var(--danger,#f87171)'};`)
                           | #{stats.soldeAnnuel>=0?'+':''}#{stats.soldeAnnuelFmt}
                         .kpi-sub depuis S1
+
+                    //- SEMAINES DU MOIS
                     .flex.gap-1(style="flex-wrap:wrap;")
                       each s in stats.semaines
                         a.semaine-pill(
@@ -300,12 +319,47 @@ block content
                             | #{s.solde>=0?'+':''}#{s.soldeFmt}
 
         style.
-          .kpi-box { flex:1;min-width:120px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:0.65rem 0.85rem; }
-          .kpi-label { font-size:0.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.2rem; }
-          .kpi-value { font-size:1.3rem;font-weight:700;font-family:var(--font-display);line-height:1.1; }
-          .kpi-sub { font-size:0.68rem;color:var(--text3);margin-top:0.15rem; }
-          .semaine-pill { display:flex;flex-direction:column;align-items:center;gap:1px;padding:0.4rem 0.65rem;background:var(--bg2);border:1px solid var(--border);border-radius:6px;text-decoration:none;transition:opacity 0.15s;min-width:60px; }
-          .semaine-pill:hover { opacity:0.75; }
+          .kpi-box {
+            flex: 1;
+            min-width: 120px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem 0.85rem;
+          }
+          .kpi-label {
+            font-size: 0.68rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            margin-bottom: 0.2rem;
+          }
+          .kpi-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            line-height: 1.1;
+          }
+          .kpi-sub {
+            font-size: 0.68rem;
+            color: var(--text3);
+            margin-top: 0.15rem;
+          }
+          .semaine-pill {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            padding: 0.4rem 0.65rem;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            text-decoration: none;
+            transition: opacity 0.15s;
+            min-width: 60px;
+          }
+          .semaine-pill:hover { opacity: 0.75; }
+
 
     //- MODAL NOUVELLE SEMAINE
     .modal-overlay#modal-semaine
@@ -386,19 +440,27 @@ block scripts
     const LABELS = { lun:'Lundi', mar:'Mardi', mer:'Mercredi', jeu:'Jeudi', ven:'Vendredi', sam:'Samedi', dim:'Dimanche' };
     const COLLABS = !{JSON.stringify(collaborateurs || [])};
 
+    // ── SUPPRIMER SEMAINE
     async function deleteSemaine(semaine) {
       if (!confirm(`Supprimer la semaine ${semaine} ?`)) return;
       try {
         const res = await fetch('/admin/delete-semaine', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pwd: PWD, semaine })
         });
         const data = await res.json();
-        if (data.ok) window.location.href = `/admin?pwd=${PWD}&success=deleted`;
-        else alert('Erreur : ' + (data.error || 'inconnue'));
-      } catch(e) { alert('Erreur réseau : ' + e.message); }
+        if (data.ok) {
+          window.location.href = `/admin?pwd=${PWD}&success=deleted`;
+        } else {
+          alert('Erreur : ' + (data.error || 'inconnue'));
+        }
+      } catch(e) {
+        alert('Erreur réseau : ' + e.message);
+      }
     }
 
+    // ── MODAL SEMAINE
     const SEMAINE_COURANTE = '#{semaineCourante}';
 
     function getDatesDeSemaine(semaine) {
@@ -421,7 +483,7 @@ block scripts
 
     function ouvrirModalSemaine() {
       const sel = document.getElementById('ms-semaine');
-      if (sel) onSemaineChange(sel.value);
+      if (sel) { onSemaineChange(sel.value); }
       document.getElementById('modal-semaine').classList.add('open');
     }
     function fermerModalSemaine() { document.getElementById('modal-semaine').classList.remove('open'); }
@@ -443,6 +505,7 @@ block scripts
       if (ai && !ai.value) ai.value = decodeURIComponent(params.get('au') || '');
     }
 
+    // ── MODAL COLLAB
     function ouvrirModalCollab() {
       document.getElementById('modal-collab-title').textContent = 'Ajouter un collaborateur';
       document.getElementById('collab-edit-index').value = '';
@@ -456,15 +519,19 @@ block scripts
       document.getElementById('modal-collab-title').textContent = 'Modifier un collaborateur';
       document.getElementById('collab-edit-index').value = idx;
       const f = document.getElementById('collab-form');
-      f.nom.value = c.nom; f.prenom.value = c.prenom;
-      f.matricule.value = c.matricule; f.numeroSite.value = c.numeroSite || '';
+      f.nom.value = c.nom;
+      f.prenom.value = c.prenom;
+      f.matricule.value = c.matricule;
+      f.numeroSite.value = c.numeroSite || '';
       f.dateNaissance.value = c.dateNaissance || '';
-      f.heuresHebdo.value = c.heuresHebdo; f.contrat.value = c.contrat;
+      f.heuresHebdo.value = c.heuresHebdo;
+      f.contrat.value = c.contrat;
       document.getElementById('modal-collab').classList.add('open');
     }
     const modalCollab = document.getElementById('modal-collab');
     if (modalCollab) modalCollab.addEventListener('click', e => { if (e.target===e.currentTarget) fermerModalCollab(); });
 
+    // ── REMPLIR MATRICULE
     function remplirMatricule(select, idx) {
       const opt = select.options[select.selectedIndex];
       const id = opt.dataset.id || '';
@@ -477,48 +544,40 @@ block scripts
       recalcHeures();
     }
 
-    function timeToMins(t) { if (!t) return 0; const [h,m]=t.split(':').map(Number); return h*60+m; }
-    function formatH(h) { const hrs=Math.floor(h); const mins=Math.round((h-hrs)*60); return mins===0?`${hrs}h`:`${hrs}h${String(mins).padStart(2,'0')}`; }
-
+    // ── CALCUL HEURES EN TEMPS RÉEL
+    function timeToMins(t) {
+      if (!t) return 0;
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+    function formatH(h) {
+      const hrs = Math.floor(h);
+      const mins = Math.round((h - hrs) * 60);
+      return mins === 0 ? `${hrs}h` : `${hrs}h${String(mins).padStart(2,'0')}`;
+    }
     function recalcHeures() {
       document.querySelectorAll('.employe-card').forEach(card => {
         let total = 0;
         card.querySelectorAll('.creneau-slot').forEach(slot => {
           const inputs = slot.querySelectorAll('input[type="time"]');
-          if (inputs.length===2 && inputs[0].value && inputs[1].value) {
+          if (inputs.length === 2 && inputs[0].value && inputs[1].value) {
             const diff = timeToMins(inputs[1].value) - timeToMins(inputs[0].value);
             if (diff > 0) total += diff;
           }
         });
         const h = total / 60;
         const valEl = card.querySelector('[data-hours-val]');
-        if (valEl) { valEl.textContent = formatH(h); valEl.className = 'hours-admin-value ' + (h===0?'text-muted':'text-accent'); }
+        if (valEl) {
+          valEl.textContent = formatH(h);
+          valEl.className = 'hours-admin-value ' + (h === 0 ? 'text-muted' : 'text-accent');
+        }
       });
     }
     recalcHeures();
 
-    // ── Collabs déjà dans le planning (par matricule) ──
-    function getMatriculesUtilises() {
-      const utilises = new Set();
-      document.querySelectorAll('.employe-card').forEach(card => {
-        const idInput = card.querySelector('input[name*="[id]"]');
-        if (idInput && idInput.value) utilises.add(idInput.value);
-      });
-      return utilises;
-    }
-
+    // ── AJOUTER ÉQUIPIER
     function getNextIndex() { return document.querySelectorAll('.employe-card').length; }
-
     function ajouterEmploye() {
-      // Filtre les collabs déjà présents
-      const utilises = getMatriculesUtilises();
-      const dispo = COLLABS.filter(c => !utilises.has(c.matricule));
-
-      if (dispo.length === 0) {
-        alert('Tous les collaborateurs sont déjà dans ce planning.');
-        return;
-      }
-
       const i = getNextIndex();
       const list = document.getElementById('employes-list');
       let joursHtml = '';
@@ -526,30 +585,32 @@ block scripts
         const short = LABELS[jour].substring(0,3);
         joursHtml += `<div class="jour-col">
           <div class="jour-label-admin">${short}</div>
-          <div class="creneau-slot"><div class="creneau-slot-label">Matin</div>
+          <div class="creneau-slot">
+            <div class="creneau-slot-label">Matin</div>
             <input type="time" name="employes[${i}][${jour}][0][debut]" oninput="recalcHeures()">
             <input type="time" name="employes[${i}][${jour}][0][fin]" oninput="recalcHeures()">
           </div>
-          <div class="creneau-slot"><div class="creneau-slot-label">Après-midi</div>
+          <div class="creneau-slot">
+            <div class="creneau-slot-label">Après-midi</div>
             <input type="time" name="employes[${i}][${jour}][1][debut]" oninput="recalcHeures()">
             <input type="time" name="employes[${i}][${jour}][1][fin]" oninput="recalcHeures()">
-          </div></div>`;
+          </div>
+        </div>`;
       });
-
-      // Seulement les collabs disponibles
-      const collabOptions = dispo.map(c =>
+      const collabOptions = COLLABS.map(c =>
         `<option value="${c.nom} ${c.prenom}" data-id="${c.matricule}" data-quota="${c.heuresHebdo}">${c.nom} ${c.prenom}</option>`
       ).join('');
-
       const card = document.createElement('div');
-      card.className = 'employe-card'; card.dataset.index = i;
+      card.className = 'employe-card';
+      card.dataset.index = i;
       card.innerHTML = `
         <div class="employe-card-header">
           <div class="employe-card-header-left">
             <div class="form-group" style="margin-bottom:0;min-width:200px;flex:2;">
               <label class="form-label">Nom complet</label>
               <select class="form-select" name="employes[${i}][nom]" onchange="remplirMatricule(this,${i})">
-                <option value="">— Choisir un équipier —</option>${collabOptions}
+                <option value="">— Choisir un équipier —</option>
+                ${collabOptions}
               </select>
             </div>
             <div class="form-group" style="margin-bottom:0;min-width:130px;flex:1;">
@@ -572,8 +633,8 @@ block scripts
 
     function supprimerEmploye(btn) {
       const card = btn.closest('.employe-card');
-      // Autorise la suppression même s'il n'y a qu'une carte
-      card.style.opacity='0'; card.style.transform='translateX(10px)'; card.style.transition='all 0.2s';
+      if (document.querySelectorAll('.employe-card').length <= 1) return;
+      card.style.opacity = '0'; card.style.transform = 'translateX(10px)'; card.style.transition = 'all 0.2s';
       setTimeout(() => {
         card.remove();
         document.querySelectorAll('.employe-card').forEach((c, idx) => {

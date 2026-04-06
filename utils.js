@@ -18,27 +18,25 @@ function calcMinutes(planningEmp) {
   return total;
 }
 
-function calcHeures(planningEmp) {
-  return calcMinutes(planningEmp);
-}
+function calcHeures(planningEmp) { return calcMinutes(planningEmp); }
 
-// ── Formate minutes → "7h05" ──
+// ── Formate minutes → "7h05" (gère les négatifs) ──
 function formatMinutes(mins) {
   if (mins === null || mins === undefined) return '–';
   const sign = mins < 0 ? '-' : '';
-  const abs = Math.abs(mins);
+  const abs = Math.abs(Math.round(mins));
   const h = Math.floor(abs / 60);
   const m = abs % 60;
   return `${sign}${h}h${String(m).padStart(2, '0')}`;
 }
 
-// ── Formate heures décimales → "7h05" ──
 function formatHeures(h) {
   if (!h && h !== 0) return '–';
-  const hrs = Math.floor(h);
-  const mins = Math.round((h - hrs) * 60);
-  if (mins === 0) return `${hrs}h`;
-  return `${hrs}h${String(mins).padStart(2, '0')}`;
+  const hrs = Math.floor(Math.abs(h));
+  const mins = Math.round((Math.abs(h) - hrs) * 60);
+  const sign = h < 0 ? '-' : '';
+  if (mins === 0) return `${sign}${hrs}h`;
+  return `${sign}${hrs}h${String(mins).padStart(2, '0')}`;
 }
 
 // ── Calcule heuresParJour + totalSemaine en minutes depuis les créneaux ──
@@ -61,7 +59,18 @@ function calcHeuresParJour(planning) {
   return { heuresParJour, totalSemaine };
 }
 
-// ── Numéro de semaine ISO + mois/année depuis "15/2026" ──
+// ── Quota mois en minutes : heuresHebdo × (nbJoursMois / 7) ──
+function quotaMoisMinutes(heuresHebdo, mois, annee) {
+  const nbJours = new Date(Date.UTC(annee, mois, 0)).getUTCDate(); // dernier jour du mois
+  return Math.round(heuresHebdo * 60 * nbJours / 7);
+}
+
+// ── Nb jours dans un mois ──
+function nbJoursMois(mois, annee) {
+  return new Date(Date.UTC(annee, mois, 0)).getUTCDate();
+}
+
+// ── Parse semaine ISO "15/2026" → { numeroSemaine, annee, numeroMois, lundi, dimanche } ──
 function parseSemaine(semaine) {
   const [w, y] = semaine.split('/').map(Number);
   const jan4 = new Date(Date.UTC(y, 0, 4));
@@ -70,7 +79,6 @@ function parseSemaine(semaine) {
   lundi.setUTCDate(jan4.getUTCDate() - (dow - 1) + (w - 1) * 7);
   const dimanche = new Date(lundi);
   dimanche.setUTCDate(lundi.getUTCDate() + 6);
-  // Mois = mois du jeudi de la semaine (convention ISO)
   const jeudi = new Date(lundi);
   jeudi.setUTCDate(lundi.getUTCDate() + 3);
   return {
@@ -82,32 +90,9 @@ function parseSemaine(semaine) {
   };
 }
 
-// ── Calcule le nombre de semaines ISO dans un mois donné ──
-// (semaines dont le jeudi tombe dans le mois)
-function nbSemainesDansMois(mois, annee) {
-  let count = 0;
-  // Parcourt toutes les semaines de l'année
-  for (let w = 1; w <= 53; w++) {
-    const jan4 = new Date(Date.UTC(annee, 0, 4));
-    const dow = jan4.getUTCDay() || 7;
-    const lundi = new Date(jan4);
-    lundi.setUTCDate(jan4.getUTCDate() - (dow - 1) + (w - 1) * 7);
-    if (lundi.getUTCFullYear() > annee) break;
-    const jeudi = new Date(lundi);
-    jeudi.setUTCDate(lundi.getUTCDate() + 3);
-    if (jeudi.getUTCFullYear() === annee && jeudi.getUTCMonth() + 1 === mois) count++;
-  }
-  return count;
-}
-
-// ── Construit les compteurs semaine + mois + solde annuel au moment du save ──
-// planningsAnnee = tous les docs planning de l'année (depuis DB)
-// planningsMois  = docs planning du mois concerné (depuis DB)
-// empId          = matricule
-// quotaHebdoMins = quota hebdo en minutes
-// totalSemaineActuelle = minutes de la semaine en cours de save
-// semaine        = "15/2026"
-function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, planningsAnnee, planningsMois, empId) {
+// ── Construit les compteurs semaine + mois + solde annuel ──
+// Solde annuel = stocké dans collaborateur, mis à jour ici
+function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, planningsAnnee, planningsMois, empId, soldePrecedent) {
   const { numeroSemaine, annee, numeroMois } = parseSemaine(semaine);
 
   // ── Compteur semaine ──
@@ -121,24 +106,18 @@ function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, plan
     soldeFmt: formatMinutes(soldeSemaine)
   };
 
-  // ── Compteur mois ──
-  const nbSemaines = nbSemainesDansMois(numeroMois, annee);
-  const quotaMois = quotaHebdoMins * nbSemaines;
+  // ── Quota mois basé sur nb jours réels du mois ──
+  const nbJours = nbJoursMois(numeroMois, annee);
+  const quotaMois = Math.round(quotaHebdoMins * nbJours / 7);
 
-  // Total réalisé ce mois = somme de toutes les semaines du mois en base
-  // + on remplace la semaine en cours par totalSemaineActuelle
+  // ── Réalisé mois = somme des semaines du mois en base + semaine courante ──
   let realiseMois = 0;
+  const dejaDansMois = planningsMois.some(d => d.semaine === semaine);
   for (const doc of planningsMois) {
     const emp = (doc.employes || []).find(e => e.id === empId);
     if (!emp) continue;
-    if (doc.semaine === semaine) {
-      realiseMois += totalSemaineActuelle; // valeur fraîche
-    } else {
-      realiseMois += emp.totalSemaine || 0;
-    }
+    realiseMois += doc.semaine === semaine ? totalSemaineActuelle : (emp.totalSemaine || 0);
   }
-  // Si le doc courant n'était pas dans planningsMois (nouveau), on l'ajoute
-  const dejaDansMois = planningsMois.some(d => d.semaine === semaine);
   if (!dejaDansMois) realiseMois += totalSemaineActuelle;
 
   const soldeMois = realiseMois - quotaMois;
@@ -146,7 +125,7 @@ function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, plan
     numeroMois,
     labelMois: MOIS_LABELS[numeroMois - 1],
     annee,
-    nbSemaines,
+    nbJours,
     quotaMois,
     quotaMoisFmt: formatMinutes(quotaMois),
     realise: realiseMois,
@@ -155,18 +134,18 @@ function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, plan
     soldeFmt: formatMinutes(soldeMois)
   };
 
-  // ── Solde annuel cumulé depuis S1 jusqu'à la semaine courante ──
+  // ── Solde annuel cumulé ──
+  // = solde de toutes les semaines de l'année jusqu'à la courante
   let soldeAnnuel = 0;
+  const dejaDansAnnee = planningsAnnee.some(d => d.semaine === semaine);
   for (const doc of planningsAnnee) {
     const [w] = doc.semaine.split('/').map(Number);
-    if (w > numeroSemaine) continue; // ne compte que jusqu'à la semaine courante
+    if (w > numeroSemaine) continue;
     const emp = (doc.employes || []).find(e => e.id === empId);
     if (!emp) continue;
     const realise = doc.semaine === semaine ? totalSemaineActuelle : (emp.totalSemaine || 0);
     soldeAnnuel += realise - quotaHebdoMins;
   }
-  // Si semaine pas encore en base
-  const dejaDansAnnee = planningsAnnee.some(d => d.semaine === semaine);
   if (!dejaDansAnnee) soldeAnnuel += soldeSemaine;
 
   return {
@@ -175,19 +154,6 @@ function construireCompteurs(semaine, totalSemaineActuelle, quotaHebdoMins, plan
     soldeAnnuel,
     soldeAnnuelFmt: formatMinutes(soldeAnnuel)
   };
-}
-
-// ── Total minutes sur un mois (pour compatibilité) ──
-function totalMois(plannings, employeId) {
-  let total = 0;
-  for (const planning of plannings) {
-    const emp = (planning.employes || []).find(e => e.id === employeId);
-    if (emp && emp.planning) {
-      const { totalSemaine } = calcHeuresParJour(emp.planning);
-      total += totalSemaine;
-    }
-  }
-  return total;
 }
 
 // ── Numéro de semaine ISO actuelle ──
@@ -234,14 +200,27 @@ function listeSemainesDispo() {
   return semaines;
 }
 
+function totalMois(plannings, employeId) {
+  let total = 0;
+  for (const planning of plannings) {
+    const emp = (planning.employes || []).find(e => e.id === employeId);
+    if (emp && emp.planning) {
+      const { totalSemaine } = calcHeuresParJour(emp.planning);
+      total += totalSemaine;
+    }
+  }
+  return total;
+}
+
 module.exports = {
   calcMinutes, calcHeures,
   formatMinutes, formatHeures,
   calcHeuresParJour,
   construireCompteurs,
-  totalMois,
+  quotaMoisMinutes,
+  nbJoursMois,
   parseSemaine,
-  nbSemainesDansMois,
+  totalMois,
   semaineActuelle,
   datesDeSemaine,
   listeSemainesDispo,

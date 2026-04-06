@@ -102,8 +102,25 @@ async function ecrireCollaborateurs(liste) {
   );
 }
 
+// ── Propage toutes les infos collab dans les plannings existants ──
+async function mettreAJourCollabDansPlannings(matricule, collab) {
+  const db = await connecter();
+  const docs = await db.collection('plannings').find({}).toArray();
+  for (const doc of docs) {
+    let modifie = false;
+    for (const emp of (doc.employes || [])) {
+      if (emp.id === matricule) {
+        emp.nom = `${collab.nom} ${collab.prenom}`;
+        modifie = true;
+      }
+    }
+    if (modifie) {
+      await db.collection('plannings').replaceOne({ _id: doc._id }, doc);
+    }
+  }
+}
 module.exports = {
   lirePlanning, ecrirePlanning, listerSemaines, supprimerPlanning,
   listerPlanningsAnnee, listerPlanningsMois,
-  lireCollaborateurs, ecrireCollaborateurs
+  lireCollaborateurs, ecrireCollaborateurs,mettreAJourCollabDansPlannings
 };
