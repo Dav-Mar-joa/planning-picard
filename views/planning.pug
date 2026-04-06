@@ -233,6 +233,8 @@ block scripts
       const panel = document.getElementById(`panel-${jour}`);
       if (panel) panel.classList.add('active');
     }
-    switchDay(JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun');
+    //- switchDay(JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun');
+    const jourDefaut = JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun';
+    switchDay(jourDefaut);
 
     function toggleAll(showAll) {}
