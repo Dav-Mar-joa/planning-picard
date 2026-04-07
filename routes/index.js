@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { lirePlanning, listerSemaines, lireCollaborateurs } = require('../db');
-const { calcHeures, formatHeures, semaineActuelle } = require('../utils');
+const { calcMinutes, formatMinutes, semaineActuelle } = require('../utils');
 
 const JOURS = ['lun', 'mar', 'mer', 'jeu', 'ven', 'sam', 'dim'];
 const JOURS_LABELS = { lun: 'Lundi', mar: 'Mardi', mer: 'Mercredi', jeu: 'Jeudi', ven: 'Vendredi', sam: 'Samedi', dim: 'Dimanche' };
@@ -15,15 +15,15 @@ router.get('/', async (req, res) => {
     const semaineChoisie = req.query.s || semaines[0] || null;
     const { data } = semaineChoisie ? await lirePlanning(semaineChoisie) : { data: null };
 
-    // Calcul heures par équipier + enrichissement avec heuresHebdo
     const heuresParEmp = {};
     if (data && data.employes) {
       for (const emp of data.employes) {
         const collab = collaborateurs.find(c => c.matricule === emp.id);
         if (collab) emp.heuresHebdo = collab.heuresHebdo;
+        const mins = calcMinutes(emp.planning); // minutes entières
         heuresParEmp[emp.id || emp.nom] = {
-          val: calcHeures(emp.planning),
-          fmt: formatHeures(calcHeures(emp.planning))
+          val: mins,
+          fmt: formatMinutes(mins) // "8h45"
         };
       }
     }
