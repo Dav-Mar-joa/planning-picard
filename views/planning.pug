@@ -67,6 +67,12 @@ block headerRight
           | S#{s.split('/')[0]} · #{s.split('/')[1]}
           if s === semaineCourante
             |  ★
+    a.btn.btn-ghost.btn-sm(
+      href="#"
+      onclick="exportPDF()"
+      title="Exporter en PDF"
+    )
+      | 🖨️ PDF        
   a.btn.btn-ghost.btn-sm(href="/admin/login") Admin
 
 block content
@@ -236,5 +242,30 @@ block scripts
     //- switchDay(JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun');
     const jourDefaut = JOURS.includes(AUJOURD_HUI) ? AUJOURD_HUI : 'lun';
     switchDay(jourDefaut);
+    
 
     function toggleAll(showAll) {}
+    function exportPDF() {
+    // Force paysage
+      const style = document.createElement('style');
+      style.innerHTML = `
+        @media print {
+          @page {
+            size: landscape;
+            margin: 10mm;
+          }
+          body {
+            zoom: 0.8;
+          }
+          .mobile-only { display: none !important; }
+          .desktop-only { display: block !important; }
+          .btn, .day-tabs, .admin-tabs { display: none !important; }
+        }
+      `;
+      document.head.appendChild(style);
+
+      window.print();
+
+      // nettoyage après impression
+      setTimeout(() => style.remove(), 1000);
+    }
